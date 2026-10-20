@@ -1,124 +1,76 @@
-A trading training game
+# Price Action Training Game
 
-# 1. Module:
-1. Price charts capture
-2. Order manager
-3. User settings
-4. Summary and statistics
+This specification incorporates the decisions agreed on October 20, 2026. The implementation and README document execution details.
 
-# 2. Price Charts Capture
+## Platform and data
 
-1. Choose a random accurate time as the start time, for example 2024-10-07 12:05
-2. Get the interval from user settings
-3. Capture up to 1500 candles before this time, are there any recommended libraries to capture the price charts?
-4. The start time less than current and larger than 2022-01-01 00:00(hard code). If candels less than 500, change a start time.
-5. The chart hides the real price, for example, BTC price is 74392, don't display this price. The close price of the last candle is 100, then calculate others' open and close price
-6. If possible, use Trading View as the chart provider
+- A browser-based website optimized for desktop, also usable on smaller screens.
+- Next.js, TypeScript, React, pnpm; Docker is optional.
+- All trading and accounting run locally in the browser. No application backend, authentication, or API keys.
+- Free Binance BTCUSDT USD-M perpetual futures OHLC data. TradingView Lightweight Charts renders the chart; it does not supply the market data.
+- Prefer an installed static historical-data pack, downloaded from Binance's public monthly archive. Support direct free Binance REST access when no pack exists. Network failures must be visible; never invent substitute candles.
+- Historical pack setup is a download script, not a running backend. Serve the generated static website on localhost or the user's server.
 
-## 2.1 User Operations of Price Chart:
+## Game and turns
 
-1. Play: Play candles automatically, 1 candel per second, user can pause and resume the play. There is dropdown menu to adjust the speed, options: 1x, 2x, 5x, 10x, 20x
-2. Next: Show the next candle, user can click this button to show the next candle. Long press or press down right arrow key to show candles continuously, 5 candels per second, user can release to stop the continuous show
-3. Finish: Show all remaining candles, up to 300. This is a one-time operation, user can click this button to show all remaining candles, and this turn is over. User can start a new turn
-4. Repick: Repick a new start time, and capture new candles. If user has already placed an order, whatever the order status is, the repick operation will be disabled forever, until the user starts a new turn
+- A game starts with a fixed **10,000 USDT** balance, carrying across **20 turns**.
+- The game ends after turn 20 or immediately on liquidation. No manual End Game action.
+- Initially show no chart; provide Start New Game.
+- Each turn chooses a random historical start at or after **2022-01-01 00:00 UTC**, before the latest available fully closed candle.
+- Load up to **1,500 initial candles**. If fewer than **500** are available, repick.
+- Normalize every OHLC value by one fixed multiplier so the last initial close is **100**. Use the same scale throughout that turn. Hide calendar dates to support blind practice.
+- There is **no fixed future-candle limit**. Do not reveal future candles after a turn ends.
+- **Finish Turn** cancels every pending order, including stop entries, and closes the position at the last displayed close, with applicable slippage and fees. No future candle is used.
+- Reaching the latest closed API candle or the end of the installed historical pack automatically finishes the turn.
+- **Repick** changes the start time without ending the turn. It locks after any successful order submission, regardless of later cancellation or fill status, until the next turn.
+- Users can trade as many times as they wish during a turn. There is no performance-based automatic turn limit.
 
-# 3. Order Manager
+## Chart controls
 
-## 3.1 User Operations of Order Manager:
+- Play/pause, default one candle per second.
+- Speeds: **1x, 2x, 5x, 10x, 20x**.
+- Next reveals one candle; holding Next or Right Arrow advances five candles per second. Releasing stops it.
+- Space toggles playback; controls do not interfere with typing in inputs.
+- Show draggable entry, SL, and optional TP lines after Start Trading.
+- Permit zooming and panning. Future candles must not affect the visible chart or its price scale.
 
-1. Supports stop market order, limit order and market order, use a tab switcher to switch between them
-2. A Long button and a Short button
-3. The user can adjust the stop price manually
-4. A stop loss order is required for each trade, and the user can adjust the stop loss price manually
-5. The position size is automatically calculated based on the user's account balance and risk percentage, which can be set in user settings. User can not adjust the position size manually.
-6. User can adjust the leverage, options: 2x, 3x, 5x, 10x
-7. Initially, the order manager doesn't display any order operations, just a button with text start trading, when the user clicks this button, the order manager will display the order operations, and provide three horizontal lines on price charts, one for stop price, one for stop loss price, and one for take profit price. The user can drag these lines to adjust the prices.
-8. Only cross margin is supported
-9. Fee: 0.05% for maker and taker, the fee is deducted from the account balance when the order is filled
-10. Slippage: 0.01%
+## Orders, risk, and position management
 
-## 3.2 Open Interest
+- Market, limit, and stop-market orders; long and short directions.
+- **SL is required** for every entry and cannot be removed from an open position. TP is optional.
+- Calculate quantity automatically: **account balance x risk percentage / absolute entry-to-SL distance**. Do not include fees or slippage in the risk budget; market sizing uses the executable slipped entry.
+- Users cannot directly edit quantity. Default risk **1%**, adjustable in settings.
+- Cross margin only; leverage choices **2x, 3x, 5x, 10x**.
+- Reject and warn when an order exceeds available margin. Reserve margin conservatively for pending orders and recheck at execution.
+- Hold only one net directional position. Opposite orders first reduce/close it, then open the excess in the opposite direction.
+- Adding in the same direction uses weighted average entry and the latest order's SL, TP, and leverage for the combined position.
+- Manual closes: **25%, 50%, 75%, 100%** of the remaining position.
+- Modify SL and TP by dragging chart lines or entering prices. Moving SL farther away is permitted.
+- Show side, leverage, quantity, unrealized PnL, entry, last, liquidation, SL, and TP.
+- Show pending orders with cancellation controls, and executed-fill history.
 
-1. Long or Short
-2. Leverage
-3. Position Size
-4. Unrealized PnL
-5. Entry Price
-6. Last Price
-7. Liquidation Price
-8. Stop Loss Price
-9. Take Profit Price
+## Simplified execution
 
-If user resizes the position, calculate and update the status automatically
+- Fee: **0.05%** per executed fill, maker and taker, deducted from balance immediately.
+- Adverse slippage: **0.01%** for market and stop-market execution, including SL and forced/manual exits. No market slippage on limit/TP fills.
+- Omit funding payments.
+- **SL first** when a candle touches both SL and TP. Newly filled entries use the entire candle range conservatively because the true intrabar path is unknown.
+- Opening gaps fill stops at the worse opening price; limits may receive opening-price improvement.
+- A documented simplified cross-margin liquidation model is acceptable: fixed **0.5% maintenance margin**, candle price instead of mark price, no exchange margin tiers. Liquidation ends the game.
 
-## 3.3 Position Manager
+## Settings and persistence
 
-1. Close Position: 25% of the position, 50% of the position, 75% of the position, 100% of the position
-2. Modify Take Profit Price: When user clicks this button, he can drag the take profit line on the price chart or write a new price manually to modify the take profit price
-3. Modify Stop Loss Price: Same to above
+- Fixed starting balance: 10,000 USDT, reset on every new game.
+- Risk default 1%; intervals: **5m, 15m, 30m, 1h, 4h, 1d**, default 5m.
+- New interval selection applies to the next chart, without replacing an active chart mid-position.
+- Save settings and at most **10 completed-game summaries** in local browser storage.
+- **Do not save active games**. Refreshing/closing the page discards the active game.
 
-# 4. User settings
+## Layout and statistics
 
-1. Balance. Default to 10000 USDT, user cannot adjust this value.
-2. Risk percentage. Default to 1%, user can adjust this value. It indicates the percentage of the account balance that the user is willing to risk on a single trade.
-3. Candle interval. Default to 5 minutes, user can adjust this value. Options: 5 minutes, 15 minutes, 30 minutes, 1 hour, 4 hours, 1 day
-
-# 5. Page Overview
-
-## Page Top
-
-Left:
-
-- Balance
-- Realized PnL of this game, Unrealized PnL of this game
-- Progress bar of this game
-- Win Rate of this game
-- Trade Count of this game
-- Fee
-
-Right:
-
-1. User settings button
-2. Summary and statistics button(To view the summary and statistics of the game)
-
-## Page Left
-
-Price Chart: As big as possible
-
-## Page Right
-
-- Order Manager
-- Open Interest
-- Order Delegation
-- Game Status:
- - Unrealized PnL of this turn
- - Realized PnL of this turn 
- - Fee of this turn
-
-# 6. Steps of the game
-
-## 6.1 Concepts
-
-- A Turn: A single trading session where the user can place trades based on the captured price charts. Each turn starts with a new random start time and a fresh set of candles. If user click the Finish button, the turn will end and user can start a new turn. If user click the Repick button, the turn will not end.
-- A Game: 20 turns, the user can play 20 turns in a game. After 20 turns, the game ends and the user can see the summary and statistics of their performance.
-
-NOTE:
-1. User can trading in a turn many times, free to open and close positions, but the turn will end when user click the Finish button. User can start a new turn after the turn ends.
-2. If user encountered liquidation, the game will end immediately, and user can see the summary and statistics of their performance. 
-
-## 6.2 Steps
-
-1. User open the website
-2. No chart at default. User can click a button to start a new game
-3. User trading in a turn or start a new turn
-4. After 20 turns, user encounters liquidation, or user click the Finish button, the game ends and user can see the summary and statistics of their performance
-
-NOTE:
-- You design the summary page
-- There are some details I didn't mention above, please refer to Trading View or mainstream exchanges for reference, and design the game reasonably
-- This is a totally local game, no backend, just fetch price charts from Trading View or other chart providers, and all the trading operations are simulated locally
-- Record summary for up to 10 games
-
-# Tech Stacks
-
-Nextjs, pnpm, docker(if required)
+- Large price chart on the left; order ticket, position management, and current-turn metrics on the right.
+- Top: balance, game realized/unrealized PnL, turn progress, win rate, closed trade count, and fees.
+- Settings and summary/history controls in the header.
+- Current-turn realized/unrealized PnL and fees.
+- Summary: final balance, net return, win rate, fees, profit factor, per-turn balance plot and results, and closed-trade review.
+- Fully closed position cycles count as trades; partial closes remain in the same trade. Win rate uses net results after fees. Label drawdown as measured at turn end.
