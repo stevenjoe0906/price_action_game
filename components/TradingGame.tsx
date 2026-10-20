@@ -1,5 +1,6 @@
 "use client";
 import dynamic from "next/dynamic";
+import ResizableChartPanels from "./ResizableChartPanels";
 import {
   useCallback,
   useEffect,
@@ -836,11 +837,7 @@ export default function TradingGame() {
         </div>
       )}
       <div className="workspace">
-        <div
-          className="left-panel"
-          role="region"
-          aria-label="Chart and order activity"
-        >
+        <ResizableChartPanels expanded={chartExpanded}>
           <section
             className={`chart-panel panel ${chartExpanded ? "is-expanded" : ""}`}
           >
@@ -1206,7 +1203,7 @@ export default function TradingGame() {
               )}
             </div>
           </section>
-        </div>
+        </ResizableChartPanels>
         <aside className="trading-sidebar" aria-label="Order manager">
           <section className="panel order-panel">
             <div className="panel-title">

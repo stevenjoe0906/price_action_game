@@ -91,3 +91,5 @@ This specification incorporates the decisions agreed on October 20, 2026. The im
 - Current-turn realized/unrealized PnL and fees.
 - Summary: final balance, net return, win rate, fees, profit factor, per-turn balance plot and results, and closed-trade review.
 - Fully closed position cycles count as trades; partial closes remain in the same trade. Win rate uses net results after fees. Label drawdown as measured at turn end.
+
+- A draggable horizontal divider between the chart and Orders & activity lets users adjust their heights, with minimum pane heights, keyboard adjustment, Escape cancellation, and double-click/Enter reset. Keep the split across turns in the current page session and adapt it to window resizing.

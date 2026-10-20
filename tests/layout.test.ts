@@ -25,6 +25,12 @@ test("turn progress belongs to statistics and chart/activity share the left work
     assert.equal(workspace.children.length, 2);
     assert.ok(workspace.children[0].matches(".left-panel"));
     assert.ok(workspace.children[0].querySelector(".chart-panel"));
+    const panes = workspace.children[0].children;
+    assert.ok(panes[0].matches(".chart-panel"));
+    assert.ok(
+      panes[1].matches('[role="separator"][aria-orientation="horizontal"]'),
+    );
+    assert.ok(panes[2].matches(".activity-panel"));
     assert.ok(
       workspace.children[0].querySelector(".activity-panel .activity-content"),
     );
