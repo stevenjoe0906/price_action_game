@@ -36,6 +36,7 @@ test("old settings retain risk and interval when adding display-size preference"
     risk: 2.5,
     interval: "15m",
     displaySize: "comfortable",
+    theme: "dark",
   });
 });
 test("all display sizes round-trip through saved settings", (t) => {
@@ -43,7 +44,12 @@ test("all display sizes round-trip through saved settings", (t) => {
   for (const displaySize of Object.keys(
     DISPLAY_SIZES,
   ) as (keyof typeof DISPLAY_SIZES)[]) {
-    const settings = { risk: 1, interval: "5m" as const, displaySize };
+    const settings = {
+      risk: 1,
+      interval: "5m" as const,
+      displaySize,
+      theme: "dark" as const,
+    };
     saveSettings(settings);
     assert.deepEqual(loadSettings(), settings);
   }
@@ -57,9 +63,41 @@ test("unknown display sizes fall back without resetting valid trading settings",
     risk: 3,
     interval: "4h",
     displaySize: "comfortable",
+    theme: "dark",
   });
 });
 test("malformed settings still fall back safely", (t) => {
   storage(t, "{invalid");
   assert.deepEqual(loadSettings(), defaults);
+});
+
+test("light and dark appearance survive reload without changing risk or sizing", (t) => {
+  storage(t);
+  for (const theme of ["light", "dark"] as const) {
+    const settings = {
+      risk: 2,
+      interval: "1h" as const,
+      displaySize: "large" as const,
+      theme,
+    };
+    saveSettings(settings);
+    assert.deepEqual(loadSettings(), settings);
+  }
+});
+test("invalid themes preserve prior display and trading preferences", (t) => {
+  storage(
+    t,
+    JSON.stringify({
+      risk: 4,
+      interval: "1d",
+      displaySize: "extra-large",
+      theme: "sepia",
+    }),
+  );
+  assert.deepEqual(loadSettings(), {
+    risk: 4,
+    interval: "1d",
+    displaySize: "extra-large",
+    theme: "dark",
+  });
 });

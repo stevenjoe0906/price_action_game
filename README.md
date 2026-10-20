@@ -79,11 +79,27 @@ Trade count and win rate use **fully closed position cycles**, net of entry/exit
 
 ## Display and readability
 
+The terminal uses the full browser width with no maximum page-width cap. During a game, compact account statistics and turn progress leave most of the viewport height for the chart; the trading sidebar scrolls independently. The Expand Chart toolbar button provides a focused chart view while keeping replay controls available. Smaller screens keep a stacked layout.
+
+Use the header’s **Light / Dark** switch or **Settings → Appearance** to change the interface, chart background, grids, candles, price labels, and annotations. Your appearance preference is saved locally and changing it does not reset the game.
+
 The default UI uses larger text, wider trading panels, and 14-pixel chart labels. In **Settings → Display size**, choose Comfortable, Large (+15%), or Extra large (+30%). This scales UI typography, panel widths, and chart labels together without requiring browser zoom. Existing saved risk/interval settings are retained when upgrading.
+
+## Chart drawing toolbar
+
+The free chart includes a custom drawing toolbar built on Lightweight Charts. It is not the proprietary TradingView Advanced Charts toolbar and needs no external library license or API key.
+
+- **Cursor/select**, **trendline**, **ray**, **horizontal line**, **vertical line**, **rectangle**, and **price-range ruler**.
+- Drag to draw, or click the first point and then the endpoint. Horizontal/vertical lines need one click. The ruler displays signed price change, percentage change, and bar distance in real time.
+- Select a drawing to drag it; drag its endpoint handles to resize. Annotations store logical chart positions and prices so they remain aligned during pan, zoom, resizing, and replay. Drawing interactions pause playback.
+- Choose a drawing color, hide/show annotations, undo/redo, delete a selected annotation, or clear all drawings. Clearing can be undone. Ctrl/Cmd+Z undoes; Ctrl/Cmd+Shift+Z redoes; Delete/Backspace removes the selected drawing. Escape cancels unfinished drawing/editing or clears selection.
+- Reset View restores automatic price scaling and the latest 110 candles. Expand Chart toggles the focused chart view.
+
+Annotations belong to the current chart and reset when you start a new turn or repick. They do not affect orders or fills and are not saved after refresh. Measurements use normalized prices; percentage changes are identical to those of the underlying prices. They cannot reveal future candles.
 
 ## Persistence
 
-Settings (including display size) and the most recent **10 completed game summaries** are stored in browser localStorage. Summaries include per-turn results and closed trades. The active game is **not saved**: refreshing or closing the page discards it. A new game always starts at 10,000 USDT. Browser-storage failures are reported without blocking the game.
+Settings (including display size and appearance) and the most recent **10 completed game summaries** are stored in browser localStorage. Summaries include per-turn results and closed trades. The active game is **not saved**: refreshing or closing the page discards it. A new game always starts at 10,000 USDT. Browser-storage failures are reported without blocking the game.
 
 ## Verification
 
@@ -93,14 +109,17 @@ pnpm typecheck
 pnpm build
 ```
 
-Tests cover fills, fees, risk sizing, SL-first ambiguity, gaps, partial closes, reversal accounting, atomic rejection, margin, liquidation, game lifecycle, and candle parsing/aggregation. An integration test uses the downloaded real archives across all six intervals (skipped when no local data pack exists).
+Tests cover fills, fees, risk sizing, SL-first ambiguity, gaps, partial closes, reversal accounting, atomic rejection, margin, liquidation, game lifecycle, candle parsing/aggregation, drawing history, and settings migrations. DOM interaction tests exercise drawing creation, live previews, editing, measurements, hiding, cancellation, and undo/redo with a simulated chart-coordinate adapter. An integration test uses the downloaded real archives across all six intervals (skipped when no local data pack exists).
 
 ## Source layout
 
 - `lib/engine.ts` — pure, immutable simulation transitions and accounting
 - `lib/market.ts` — public REST / local archive loading, aggregation, normalization, replay
 - `lib/storage.ts` — settings and bounded completed-game history
-- `components/PriceChart.tsx` — chart, draggable order lines, fill markers
+- `components/PriceChart.tsx` — themed chart, draggable order lines, fill markers
+- `components/ChartDrawings.tsx` — drawing toolbar, annotations, measurements, and editing
+- `lib/drawings.ts` — drawing history and coordinate/measurement helpers
+- `lib/theme.ts` — native chart theme palettes
 - `components/TradingGame.tsx` — game controls, trading UI, settings, summaries
 - `scripts/download-data.mjs` — optional public historical archive setup
 

@@ -48,6 +48,7 @@ import {
   type Settings,
   type Summary,
 } from "@/lib/storage";
+import { CHART_THEMES, type Theme } from "@/lib/theme";
 import type { ChartLine } from "./PriceChart";
 const PriceChart = dynamic(() => import("./PriceChart"), {
   ssr: false,
@@ -234,6 +235,7 @@ export default function TradingGame() {
   const [loading, setLoading] = useState(false);
   const locked = useRef(false);
   const [playing, setPlaying] = useState(false);
+  const [chartExpanded, setChartExpanded] = useState(false);
   const [speed, setSpeed] = useState(1);
   const [ticket, setTicket] = useState(false);
   const [side, setSide] = useState<Side>("long");
@@ -266,6 +268,18 @@ export default function TradingGame() {
   useEffect(() => {
     document.documentElement.style.fontSize = `${16 * DISPLAY_SIZES[settings.displaySize]}px`;
   }, [settings.displaySize]);
+  useEffect(() => {
+    document.documentElement.dataset.theme = settings.theme;
+  }, [settings.theme]);
+  useEffect(() => {
+    if (!chartExpanded) return;
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !event.defaultPrevented)
+        setChartExpanded(false);
+    };
+    window.addEventListener("keydown", escape);
+    return () => window.removeEventListener("keydown", escape);
+  }, [chartExpanded]);
   useEffect(() => {
     if (!toast) return;
     const id = setTimeout(() => setToast(""), 6000);
@@ -576,6 +590,7 @@ export default function TradingGame() {
     }
   };
   const lines = useMemo<ChartLine[]>(() => {
+    const palette = CHART_THEMES[settings.theme];
     const result: ChartLine[] = [];
     if (game?.position) {
       result.push(
@@ -583,13 +598,13 @@ export default function TradingGame() {
           id: "position-entry",
           title: "POSITION",
           price: game.position.entry,
-          color: "#a4b2bd",
+          color: palette.neutral,
         },
         {
           id: "position-sl",
           title: "SL",
           price: game.position.sl,
-          color: "#e98080",
+          color: palette.down,
           draggable: game.status === "active",
         },
       );
@@ -598,7 +613,7 @@ export default function TradingGame() {
           id: "position-tp",
           title: "TP",
           price: game.position.tp,
-          color: "#72d7b0",
+          color: palette.up,
           draggable: game.status === "active",
         });
     }
@@ -608,14 +623,14 @@ export default function TradingGame() {
           id: "draft-entry",
           title: "ENTRY",
           price: orderType === "market" ? game.last : +entry,
-          color: "#c5db88",
+          color: palette.accent,
           draggable: orderType !== "market",
         },
         {
           id: "draft-sl",
           title: "ORDER SL",
           price: +sl,
-          color: "#c98181",
+          color: palette.down,
           draggable: true,
         },
       );
@@ -624,12 +639,13 @@ export default function TradingGame() {
           id: "draft-tp",
           title: "ORDER TP",
           price: +tp,
-          color: "#5aa58b",
+          color: palette.up,
           draggable: true,
         });
     }
     return result;
   }, [
+    settings.theme,
     game?.position,
     game?.last,
     game?.status,
@@ -658,7 +674,7 @@ export default function TradingGame() {
     setModal("settings");
   };
   return (
-    <main className="app-shell">
+    <main className={`app-shell ${game ? "has-session" : ""}`}>
       <header className="topbar">
         <a href="/" className="brand" aria-label="Price Action home">
           <span className="brand-mark">
@@ -672,10 +688,38 @@ export default function TradingGame() {
           </span>
         </a>
         <div className="topbar-center">
-          <span className="live-dot" /> PRACTICE MODE{" "}
-          <span className="topbar-divider" /> NO REAL MONEY
+          {game ? (
+            <GameProgress game={game} />
+          ) : (
+            <>
+              <span className="live-dot" /> PRACTICE MODE{" "}
+              <span className="topbar-divider" /> NO REAL MONEY
+            </>
+          )}
         </div>
         <div className="header-actions">
+          <button
+            className="theme-switch"
+            aria-label={`Switch to ${settings.theme === "dark" ? "light" : "dark"} mode`}
+            title={`Switch to ${settings.theme === "dark" ? "light" : "dark"} mode`}
+            onClick={() => {
+              const updated = {
+                ...settings,
+                theme: (settings.theme === "dark" ? "light" : "dark") as Theme,
+              };
+              setSettings(updated);
+              try {
+                saveSettings(updated);
+              } catch {
+                setToast("Theme changed, but browser storage is unavailable.");
+              }
+            }}
+          >
+            <span aria-hidden="true">
+              {settings.theme === "dark" ? "☀" : "☾"}
+            </span>
+            <span>{settings.theme === "dark" ? "Light" : "Dark"}</span>
+          </button>
           <button className="text-button" onClick={() => setModal("rules")}>
             <Icon name="book" />
             <span>How to play</span>
@@ -700,41 +744,17 @@ export default function TradingGame() {
           </button>
         </div>
       </header>
-      <section className="game-heading">
-        <div>
-          <div className="eyebrow">YOUR EDGE STARTS WITH PRACTICE</div>
-          <h1>
-            Read the chart. <span>Make your move.</span>
-          </h1>
-        </div>
-        <div className="game-progress">
+      {!game && (
+        <section className="game-heading">
           <div>
-            <span>
-              {game
-                ? `GAME ${game.status === "finished" ? "COMPLETE" : "IN PROGRESS"}`
-                : "A FRESH PERSPECTIVE, EVERY TURN"}
-            </span>
-            <strong>
-              {game ? `Turn ${String(game.turn).padStart(2, "0")}` : "20 turns"}{" "}
-              <span>/ 20</span>
-            </strong>
+            <div className="eyebrow">YOUR EDGE STARTS WITH PRACTICE</div>
+            <h1>
+              Read the chart. <span>Make your move.</span>
+            </h1>
           </div>
-          <div className="progress-track">
-            {Array.from({ length: 20 }, (_, i) => (
-              <i
-                key={i}
-                className={
-                  i < (game?.turns.length ?? 0)
-                    ? "done"
-                    : i === (game?.turn ?? 0) - 1
-                      ? "current"
-                      : ""
-                }
-              />
-            ))}
-          </div>
-        </div>
-      </section>
+          <GameProgress game={game} />
+        </section>
+      )}
       <section className="metrics-strip" aria-label="Game statistics">
         <Metric
           label="Account balance"
@@ -787,7 +807,9 @@ export default function TradingGame() {
         </div>
       )}
       <div className="workspace">
-        <section className="chart-panel panel">
+        <section
+          className={`chart-panel panel ${chartExpanded ? "is-expanded" : ""}`}
+        >
           <div className="chart-heading">
             <div className="instrument">
               <span className={`bitcoin ${active ? "hidden-symbol" : ""}`}>
@@ -869,6 +891,9 @@ export default function TradingGame() {
                 stopHold();
               }}
               textScale={DISPLAY_SIZES[settings.displaySize]}
+              theme={settings.theme}
+              expanded={chartExpanded}
+              onExpand={() => setChartExpanded((v) => !v)}
             />
           ) : (
             <div className="empty-chart">
@@ -1447,6 +1472,18 @@ export default function TradingGame() {
             </select>
           </label>
           <label className="field-label">
+            Appearance <span>Chart and interface</span>
+            <select
+              value={draft.theme}
+              onChange={(event) =>
+                setDraft((d) => ({ ...d, theme: event.target.value as Theme }))
+              }
+            >
+              <option value="dark">Dark mode</option>
+              <option value="light">Light mode</option>
+            </select>
+          </label>
+          <label className="field-label">
             Display size <span>Text, controls, and chart labels</span>
             <select
               value={draft.displaySize}
@@ -1784,17 +1821,18 @@ function SummaryView({
         >
           <path
             d="M20 25h640M20 82h640M20 140h640"
-            stroke="#293338"
+            stroke="var(--border)"
             strokeDasharray="3 5"
           />
           <path
             d={`${path} L660 155 L20 155 Z`}
-            fill={s.net >= 0 ? "#72d7b010" : "#e9808010"}
+            fill={s.net >= 0 ? "var(--green)" : "var(--red)"}
+            fillOpacity=".08"
           />
           <path
             d={path}
             fill="none"
-            stroke={s.net >= 0 ? "#72d7b0" : "#e98080"}
+            stroke={s.net >= 0 ? "var(--green)" : "var(--red)"}
             strokeWidth="2.5"
           />
         </svg>
@@ -1862,5 +1900,37 @@ function SummaryView({
         All completed games <Icon name="history" size={16} />
       </button>
     </>
+  );
+}
+
+function GameProgress({ game }: { game: Game | null }) {
+  return (
+    <div className="game-progress">
+      <div>
+        <span>
+          {game
+            ? `GAME ${game.status === "finished" ? "COMPLETE" : "IN PROGRESS"}`
+            : "A FRESH PERSPECTIVE, EVERY TURN"}
+        </span>
+        <strong>
+          {game ? `Turn ${String(game.turn).padStart(2, "0")}` : "20 turns"}{" "}
+          <span>/ 20</span>
+        </strong>
+      </div>
+      <div className="progress-track">
+        {Array.from({ length: 20 }, (_, i) => (
+          <i
+            key={i}
+            className={
+              i < (game?.turns.length ?? 0)
+                ? "done"
+                : i === (game?.turn ?? 0) - 1
+                  ? "current"
+                  : ""
+            }
+          />
+        ))}
+      </div>
+    </div>
   );
 }

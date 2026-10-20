@@ -4,7 +4,7 @@ This specification incorporates the decisions agreed on October 20, 2026. The im
 
 ## Platform and data
 
-- A browser-based website optimized for desktop, also usable on smaller screens.
+- A browser-based website optimized for desktop, also usable on smaller screens. Use the full page width, a chart-first viewport-height layout, and a focused expand-chart mode.
 - Next.js, TypeScript, React, pnpm; Docker is optional.
 - All trading and accounting run locally in the browser. No application backend, authentication, or API keys.
 - Free Binance BTCUSDT USD-M perpetual futures OHLC data. TradingView Lightweight Charts renders the chart; it does not supply the market data.
@@ -33,6 +33,14 @@ This specification incorporates the decisions agreed on October 20, 2026. The im
 - Space toggles playback; controls do not interfere with typing in inputs.
 - Show draggable entry, SL, and optional TP lines after Start Trading. Support dragging anywhere along the line, with live line, price-axis label, and input updates. Pause replay while dragging, validate protection on release, and let Escape cancel.
 - Permit zooming and panning. Future candles must not affect the visible chart or its price scale.
+
+## Drawing toolbar
+
+- Provide a free custom toolbar on the chart: select, trendline, ray, horizontal/vertical lines, rectangle, and a percentage/price-change ruler.
+- Support drag-to-draw or two-point placement, live previews, selecting/moving drawings, endpoint editing, and colors.
+- Keep drawings anchored to chart coordinates through pan, zoom, resize, and candle replay. Drawings must not influence orders or expose future candles.
+- Support hide/show, delete/clear, undo/redo, cancellation, reset view, and chart expansion. Drawings reset with a new chart/turn.
+- This is a custom toolbar on Lightweight Charts; the proprietary TradingView Advanced Charts toolbar is not a dependency.
 
 ## Orders, risk, and position management
 
@@ -63,6 +71,7 @@ This specification incorporates the decisions agreed on October 20, 2026. The im
 - Fixed starting balance: 10,000 USDT, reset on every new game.
 - Risk default 1%; intervals: **5m, 15m, 30m, 1h, 4h, 1d**, default 5m.
 - New interval selection applies to the next chart, without replacing an active chart mid-position.
+- Provide a persistent Light/Dark switch affecting the interface, native chart, and drawing colors.
 - Provide readable default typography and a persistent Comfortable / Large / Extra large display-size preference, including chart labels.
 - Save settings and at most **10 completed-game summaries** in local browser storage.
 - **Do not save active games**. Refreshing/closing the page discards the active game.

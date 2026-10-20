@@ -11,6 +11,8 @@ import {
   type IPriceLine,
   type UTCTimestamp,
 } from "lightweight-charts";
+import ChartDrawings from "./ChartDrawings";
+import { CHART_THEMES, type Theme } from "@/lib/theme";
 import type { Candle, Fill } from "@/lib/engine";
 import { createLineDrag, type LinePreview } from "@/lib/line-drag";
 export type ChartLine = {
@@ -29,6 +31,9 @@ type Props = {
   onLinePreview: (id: string, price: number) => void;
   onDragStart: () => void;
   textScale: number;
+  theme: Theme;
+  expanded: boolean;
+  onExpand: () => void;
 };
 export default function PriceChart({
   candles,
@@ -39,6 +44,9 @@ export default function PriceChart({
   onLinePreview,
   onDragStart,
   textScale,
+  theme,
+  expanded,
+  onExpand,
 }: Props) {
   const container = useRef<HTMLDivElement>(null);
   const api = useRef<IChartApi | null>(null);
@@ -176,11 +184,40 @@ export default function PriceChart({
     redraw((n) => n + 1);
   }, [candles]);
   useEffect(() => {
+    const palette = CHART_THEMES[theme];
     api.current?.applyOptions({
-      layout: { fontSize: Math.round(14 * textScale) },
+      layout: {
+        fontSize: Math.round(14 * textScale),
+        background: { type: ColorType.Solid, color: palette.background },
+        textColor: palette.text,
+      },
+      grid: {
+        vertLines: { color: palette.grid },
+        horzLines: { color: palette.grid },
+      },
+      rightPriceScale: { borderColor: palette.border },
+      timeScale: { borderColor: palette.border },
+      crosshair: {
+        vertLine: {
+          color: palette.crosshair,
+          labelBackgroundColor: palette.label,
+        },
+        horzLine: {
+          color: palette.crosshair,
+          labelBackgroundColor: palette.label,
+        },
+      },
+    });
+    series.current?.applyOptions({
+      upColor: palette.up,
+      downColor: palette.down,
+      borderUpColor: palette.up,
+      borderDownColor: palette.down,
+      wickUpColor: palette.up,
+      wickDownColor: palette.down,
     });
     redraw((n) => n + 1);
-  }, [textScale]);
+  }, [textScale, theme]);
   useEffect(() => {
     const s = series.current;
     if (!s) return;
@@ -243,95 +280,105 @@ export default function PriceChart({
   }, []);
   void revision;
   return (
-    <div className="chart-surface">
-      <div ref={container} className="chart-canvas" />
-      <div className="chart-watermark">
-        PRICE ACTION<span>READ THE MARKET. TRUST YOUR PROCESS.</span>
-      </div>
-      {lines
-        .filter((l) => l.draggable && l.price > 0)
-        .map((l) => {
-          const y = series.current?.priceToCoordinate(
-            dragging?.id === l.id ? dragging.price : l.price,
-          );
+    <div className="chart-workbench">
+      <div className="chart-surface">
+        <div ref={container} className="chart-canvas" />
+        <ChartDrawings
+          chart={api.current}
+          series={series.current}
+          textScale={textScale}
+          onInteract={onDragStart}
+          expanded={expanded}
+          onExpand={onExpand}
+        />
+        <div className="chart-watermark">
+          PRICE ACTION<span>READ THE MARKET. TRUST YOUR PROCESS.</span>
+        </div>
+        {lines
+          .filter((l) => l.draggable && l.price > 0)
+          .map((l) => {
+            const y = series.current?.priceToCoordinate(
+              dragging?.id === l.id ? dragging.price : l.price,
+            );
+            if (
+              y === null ||
+              y === undefined ||
+              y < 0 ||
+              y > (container.current?.clientHeight ?? 0) - 28
+            )
+              return null;
+            return (
+              <button
+                key={l.id}
+                className={`chart-line-target ${dragging?.id === l.id ? "is-dragging" : ""}`}
+                style={{ top: y, color: l.color }}
+                title={`Drag anywhere on ${l.title}. Escape cancels. Arrow keys fine-tune the price.`}
+                aria-label={`Drag ${l.title}`}
+                onPointerDown={(e) => {
+                  if (e.button !== 0 || !container.current) return;
+                  e.preventDefault();
+                  e.stopPropagation();
+                  e.currentTarget.setPointerCapture(e.pointerId);
+                  drag.current?.begin(
+                    l.id,
+                    l.price,
+                    e.clientY - container.current.getBoundingClientRect().top,
+                    y,
+                  );
+                }}
+                onKeyDown={(event) => {
+                  if (!["ArrowUp", "ArrowDown"].includes(event.key)) return;
+                  event.preventDefault();
+                  event.stopPropagation();
+                  const step =
+                    Math.max(0.0001, l.price * 0.00001) *
+                    (event.shiftKey ? 10 : 1);
+                  callbacks.current.onDragStart();
+                  callbacks.current.onLine(
+                    l.id,
+                    +(
+                      l.price + (event.key === "ArrowUp" ? step : -step)
+                    ).toFixed(6),
+                  );
+                }}
+              >
+                <span className="chart-line-label">
+                  {l.title} <span>↕</span>
+                  <strong>
+                    {(dragging?.id === l.id ? dragging.price : l.price).toFixed(
+                      4,
+                    )}
+                  </strong>
+                </span>
+              </button>
+            );
+          })}
+        {fills.slice(-100).map((f, i) => {
+          const x = api.current
+            ?.timeScale()
+            .timeToCoordinate(f.time as UTCTimestamp);
+          const y = series.current?.priceToCoordinate(f.price);
           if (
-            y === null ||
-            y === undefined ||
+            x == null ||
+            y == null ||
+            x < 0 ||
             y < 0 ||
-            y > (container.current?.clientHeight ?? 0) - 28
+            x > (container.current?.clientWidth ?? 0) - 80 ||
+            y > (container.current?.clientHeight ?? 0) - 25
           )
             return null;
           return (
-            <button
-              key={l.id}
-              className={`chart-line-target ${dragging?.id === l.id ? "is-dragging" : ""}`}
-              style={{ top: y, color: l.color }}
-              title={`Drag anywhere on ${l.title}. Escape cancels. Arrow keys fine-tune the price.`}
-              aria-label={`Drag ${l.title}`}
-              onPointerDown={(e) => {
-                if (e.button !== 0 || !container.current) return;
-                e.preventDefault();
-                e.stopPropagation();
-                e.currentTarget.setPointerCapture(e.pointerId);
-                drag.current?.begin(
-                  l.id,
-                  l.price,
-                  e.clientY - container.current.getBoundingClientRect().top,
-                  y,
-                );
-              }}
-              onKeyDown={(event) => {
-                if (!["ArrowUp", "ArrowDown"].includes(event.key)) return;
-                event.preventDefault();
-                event.stopPropagation();
-                const step =
-                  Math.max(0.0001, l.price * 0.00001) *
-                  (event.shiftKey ? 10 : 1);
-                callbacks.current.onDragStart();
-                callbacks.current.onLine(
-                  l.id,
-                  +(l.price + (event.key === "ArrowUp" ? step : -step)).toFixed(
-                    6,
-                  ),
-                );
-              }}
+            <span
+              key={`${f.time}-${i}`}
+              className={`fill-marker ${f.side}`}
+              style={{ left: x, top: y }}
+              title={`${f.action} · ${f.price.toFixed(4)}`}
             >
-              <span className="chart-line-label">
-                {l.title} <span>↕</span>
-                <strong>
-                  {(dragging?.id === l.id ? dragging.price : l.price).toFixed(
-                    4,
-                  )}
-                </strong>
-              </span>
-            </button>
+              {f.side === "long" ? "▲" : "▼"}
+            </span>
           );
         })}
-      {fills.slice(-100).map((f, i) => {
-        const x = api.current
-          ?.timeScale()
-          .timeToCoordinate(f.time as UTCTimestamp);
-        const y = series.current?.priceToCoordinate(f.price);
-        if (
-          x == null ||
-          y == null ||
-          x < 0 ||
-          y < 0 ||
-          x > (container.current?.clientWidth ?? 0) - 80 ||
-          y > (container.current?.clientHeight ?? 0) - 25
-        )
-          return null;
-        return (
-          <span
-            key={`${f.time}-${i}`}
-            className={`fill-marker ${f.side}`}
-            style={{ left: x, top: y }}
-            title={`${f.action} · ${f.price.toFixed(4)}`}
-          >
-            {f.side === "long" ? "▲" : "▼"}
-          </span>
-        );
-      })}
+      </div>
     </div>
   );
 }

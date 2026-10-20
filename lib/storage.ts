@@ -1,4 +1,5 @@
 import { INTERVALS, type Interval } from "./market";
+import type { Theme } from "./theme";
 import type { Game, Trade, Turn } from "./engine";
 export const DISPLAY_SIZES = {
   comfortable: 1,
@@ -10,6 +11,7 @@ export type Settings = {
   risk: number;
   interval: Interval;
   displaySize: DisplaySize;
+  theme: Theme;
 };
 export type Summary = {
   id: string;
@@ -25,6 +27,7 @@ export const defaults: Settings = {
   risk: 1,
   interval: "5m",
   displaySize: "comfortable",
+  theme: "dark",
 };
 export function loadSettings(): Settings {
   try {
@@ -40,6 +43,8 @@ export function loadSettings(): Settings {
     return {
       risk: s.risk,
       interval: s.interval,
+      theme:
+        s.theme === "light" || s.theme === "dark" ? s.theme : defaults.theme,
       displaySize: Object.hasOwn(DISPLAY_SIZES, s.displaySize)
         ? s.displaySize
         : defaults.displaySize,
