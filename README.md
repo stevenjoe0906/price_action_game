@@ -58,9 +58,29 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-Open **http://YOUR_SERVER_IP:3000**. The first build installs dependencies, downloads free BTCUSDT history, and exports the website. The running container serves only static files with Nginx, includes an HTTP health check, and uses `restart: unless-stopped`. No database, API key, application backend, or data volume is needed. Settings and completed-game history remain in each browser.
+The container is published at **http://127.0.0.1:3002** on the server for a host Nginx reverse proxy. The first build installs dependencies, downloads free BTCUSDT history, and exports the website. The running container serves only static files with Nginx, includes an HTTP health check, and uses `restart: unless-stopped`. No database, API key, application backend, or data volume is needed. Settings and completed-game history remain in each browser.
 
-Edit `.env` to change the host port (`PORT=3000`) or bind address (`BIND_ADDRESS=0.0.0.0`). For an existing reverse proxy running on the host, use `BIND_ADDRESS=127.0.0.1` and proxy to `http://127.0.0.1:3000`; configure the domain and HTTPS in that proxy. With the default bind address, permit the selected port in your server firewall if needed. Run `docker compose up -d --build` after configuration changes.
+The defaults in `compose.yaml` and `.env.example` are `BIND_ADDRESS=127.0.0.1` and `PORT=3002`, mapping host port 3002 to container port 80. If you already have a `.env` file, update these two values explicitly: pulling repository changes does not overwrite your existing configuration. Run `docker compose up -d --build` after changes. To publish directly without a host proxy, change `BIND_ADDRESS` to `0.0.0.0` and permit the selected port in your firewall.
+
+#### Host Nginx and Cloudflare
+
+`deploy/host-nginx.conf` is the host reverse-proxy configuration. It listens on port 80 over both IPv4 and IPv6 and forwards requests to `127.0.0.1:3002`. Docker only needs the IPv4 loopback binding; host Nginx handles both public address families. `deploy/nginx.conf` is the separate static-file configuration already baked into the container.
+
+1. Set `BIND_ADDRESS=127.0.0.1` and `PORT=3002` in `.env`, then start the container as above.
+2. Copy the host configuration and replace `trading.example.com` with your domain:
+
+   ```sh
+   sudo cp deploy/host-nginx.conf /etc/nginx/conf.d/price-action.conf
+   sudo nano /etc/nginx/conf.d/price-action.conf
+   sudo nginx -t && sudo systemctl reload nginx
+   ```
+
+   The host Nginx installation must include `/etc/nginx/conf.d/*.conf` inside its `http {}` context. Permit inbound TCP port 80 over IPv4 and IPv6. The server needs working IPv6 networking for direct IPv6 origin connections.
+3. In Cloudflare DNS, create a proxied (orange cloud) **A** record for your server's public IPv4 address. Add a proxied **AAAA** record if the server also has a working public IPv6 address.
+4. Set **SSL/TLS → Overview → Flexible** for this certificate-free HTTP origin. Cloudflare serves HTTPS to visitors, while Cloudflare-to-origin traffic remains unencrypted HTTP. Proxied DNS alone does not eliminate origin TLS requirements under Full or Full (strict). See [Cloudflare Flexible mode](https://developers.cloudflare.com/ssl/origin-configuration/ssl-modes/flexible/).
+5. If desired, enable **Always Use HTTPS** at Cloudflare. Do not add an HTTP-to-HTTPS redirect at the origin with Flexible mode; that causes a redirect loop.
+
+Visit **https://YOUR_DOMAIN** through Cloudflare. No origin certificate or host port 443 listener is configured by this example.
 
 Check status/logs or stop the service:
 
@@ -89,7 +109,7 @@ Without Compose:
 
 ```sh
 docker build -t price-action-game .
-docker run -d --name price-action-game --restart unless-stopped -p 3000:80 price-action-game
+docker run -d --name price-action-game --restart unless-stopped -p 127.0.0.1:3002:80 price-action-game
 ```
 
 Local archives, Git metadata, environment files, and build outputs are excluded from the Docker context. The final image contains Nginx and the static export, not the Node.js build toolchain.

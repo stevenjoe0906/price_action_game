@@ -8,5 +8,5 @@ services:
         DATA_TO: "${DATA_TO:-}"
         DATA_REFRESH: "${DATA_REFRESH:-0}"
     ports:
-      - "${BIND_ADDRESS:-0.0.0.0}:${PORT:-3000}:80"
+      - "${BIND_ADDRESS:-127.0.0.1}:${PORT:-3002}:80"
     restart: unless-stopped
