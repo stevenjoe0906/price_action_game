@@ -27,7 +27,7 @@ export type Position = {
   side: Side;
   qty: number;
   entry: number;
-  sl: number;
+  sl: number | null;
   tp: number | null;
   leverage: number;
   opened: number;
@@ -343,9 +343,9 @@ function protection(g: Game, b: Candle) {
   if (!p) return;
   const long = p.side === "long";
   const liq = liquidationPrice(g)!;
-  const slHit = long ? b.low <= p.sl : b.high >= p.sl;
+  const slHit = p.sl !== null && (long ? b.low <= p.sl : b.high >= p.sl);
   const liqHit = long ? b.low <= liq : b.high >= liq;
-  const liqBeforeSL = long ? liq >= p.sl : liq <= p.sl;
+  const liqBeforeSL = p.sl === null || (long ? liq >= p.sl : liq <= p.sl);
   const gapLiquidated = long ? b.open <= liq : b.open >= liq;
   if (liqHit && (gapLiquidated || !slHit || liqBeforeSL)) {
     const price = long ? Math.min(b.open, liq) : Math.max(b.open, liq);
@@ -358,7 +358,7 @@ function protection(g: Game, b: Candle) {
     g.notice = "Liquidated. Your game has ended.";
     return;
   }
-  if (slHit) {
+  if (slHit && p.sl !== null) {
     const price = long ? Math.min(b.open, p.sl) : Math.max(b.open, p.sl);
     close(g, p.qty, slip(price, long ? "short" : "long"), "Stop loss");
     return;
@@ -478,13 +478,16 @@ export function nextTurn(original: Game, last: number, time: number): Game {
 }
 export function modifyProtection(
   original: Game,
-  sl: number,
+  sl: number | null,
   tp: number | null,
 ): Game {
   const g = copy(original);
   if (!g.position || g.status !== "active") return g;
   const long = g.position.side === "long";
-  if (!Number.isFinite(sl) || sl <= 0 || (long ? sl >= g.last : sl <= g.last))
+  if (
+    sl !== null &&
+    (!Number.isFinite(sl) || sl <= 0 || (long ? sl >= g.last : sl <= g.last))
+  )
     throw new Error("Stop loss must be on the loss side of the current price.");
   if (
     tp !== null &&

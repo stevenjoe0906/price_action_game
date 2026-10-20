@@ -18,18 +18,14 @@ import type { Side } from "@/lib/engine";
 import { CHART_THEMES, type Theme } from "@/lib/theme";
 import type { Candle, Fill } from "@/lib/engine";
 import { createLineDrag, type LinePreview } from "@/lib/line-drag";
-export type ChartLine = {
-  id: string;
-  price: number;
-  color: string;
-  title: string;
-  draggable?: boolean;
-};
+import type { ChartLine } from "@/lib/chart-lines";
+export type { ChartLine } from "@/lib/chart-lines";
 type Props = {
   candles: Candle[];
   lines: ChartLine[];
   fills: Fill[];
   anchor: number;
+  onCancelLine: (id: string) => void;
   onLine: (id: string, price: number) => void;
   onLinePreview: (id: string, price: number) => void;
   onDragStart: () => void;
@@ -46,6 +42,7 @@ export default function PriceChart({
   fills,
   anchor,
   onLine,
+  onCancelLine,
   onLinePreview,
   onDragStart,
   textScale,
@@ -390,6 +387,44 @@ export default function PriceChart({
               </button>
             );
           })}
+        {canTrade &&
+          lines
+            .filter(
+              (line) =>
+                line.cancelLabel &&
+                Number.isFinite(line.price) &&
+                line.price > 0,
+            )
+            .map((line) => {
+              const y = series.current?.priceToCoordinate(line.price);
+              if (
+                y == null ||
+                y < 12 ||
+                y > (api.current?.paneSize().height ?? 0) - 12
+              )
+                return null;
+              return (
+                <button
+                  key={`cancel-${line.id}`}
+                  type="button"
+                  className="chart-line-cancel"
+                  style={{ top: y, borderColor: line.color, color: line.color }}
+                  aria-label={line.cancelLabel}
+                  title={line.cancelLabel}
+                  onPointerDown={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                  }}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    drag.current?.end(true);
+                    onCancelLine(line.id);
+                  }}
+                >
+                  ×
+                </button>
+              );
+            })}
         {fills.slice(-100).map((f, i) => {
           const x = api.current
             ?.timeScale()

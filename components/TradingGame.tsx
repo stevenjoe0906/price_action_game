@@ -55,7 +55,7 @@ import {
   type ChartOrderType,
 } from "@/lib/order-ticket";
 import { CHART_THEMES, type Theme } from "@/lib/theme";
-import type { ChartLine } from "./PriceChart";
+import { workingChartLines, type ChartLine } from "@/lib/chart-lines";
 const PriceChart = dynamic(() => import("./PriceChart"), {
   ssr: false,
   loading: () => <div className="chart-loading">Preparing chart…</div>,
@@ -293,7 +293,9 @@ export default function TradingGame() {
     return () => clearTimeout(id);
   }, [toast]);
   useEffect(() => {
-    setPositionSL(game?.position ? String(+game.position.sl.toFixed(6)) : "");
+    setPositionSL(
+      game?.position?.sl != null ? String(+game.position.sl.toFixed(6)) : "",
+    );
     setPositionTP(
       game?.position?.tp ? String(+game.position.tp.toFixed(6)) : "",
     );
@@ -517,6 +519,37 @@ export default function TradingGame() {
     setSl((p * (s === "long" ? 0.995 : 1.005)).toFixed(4));
     setTp((p * (s === "long" ? 1.01 : 0.99)).toFixed(4));
   };
+  const cancelTicket = () => {
+    setTicket(false);
+    setSide("long");
+    setOrderType("market");
+    setLeverage(10);
+    const current = gameRef.current?.last ?? 100;
+    setEntry(String(current));
+    setLimitPrice((current + 0.0001).toFixed(6));
+    setSl((current * 0.995).toFixed(6));
+    setTp((current * 1.01).toFixed(6));
+    setError("");
+  };
+  const onCancelLine = (id: string) => {
+    if (locked.current || gameRef.current?.status !== "active") return;
+    if (id === "draft-entry") {
+      cancelTicket();
+      return;
+    }
+    if (id.startsWith("order-")) {
+      const orderId = Number(id.split("-")[1]);
+      safe((g) => cancelOrder(g, orderId));
+    } else if (id === "position-sl" || id === "position-tp") {
+      safe((g) =>
+        modifyProtection(
+          g,
+          id === "position-sl" ? null : g.position!.sl,
+          id === "position-tp" ? null : g.position!.tp,
+        ),
+      );
+    }
+  };
   const startTicket = () => {
     setTicket(true);
     changeType(orderType);
@@ -585,6 +618,7 @@ export default function TradingGame() {
         risk: settings.risk,
       });
       commit(next);
+      cancelTicket();
       setError("");
       setToast(
         orderType === "market"
@@ -623,38 +657,15 @@ export default function TradingGame() {
     } finally {
       // Invalid drops restore both the line and its input; previews never mutate the engine.
       const position = gameRef.current?.position;
-      setPositionSL(position ? String(+position.sl.toFixed(6)) : "");
+      setPositionSL(
+        position?.sl != null ? String(+position.sl.toFixed(6)) : "",
+      );
       setPositionTP(position?.tp ? String(+position.tp.toFixed(6)) : "");
     }
   };
   const lines = useMemo<ChartLine[]>(() => {
     const palette = CHART_THEMES[settings.theme];
-    const result: ChartLine[] = [];
-    if (game?.position) {
-      result.push(
-        {
-          id: "position-entry",
-          title: "POSITION",
-          price: game.position.entry,
-          color: palette.neutral,
-        },
-        {
-          id: "position-sl",
-          title: "SL",
-          price: game.position.sl,
-          color: palette.down,
-          draggable: game.status === "active",
-        },
-      );
-      if (game.position.tp)
-        result.push({
-          id: "position-tp",
-          title: "TP",
-          price: game.position.tp,
-          color: palette.up,
-          draggable: game.status === "active",
-        });
-    }
+    const result = workingChartLines(game, palette);
     if (ticket && game?.status === "active") {
       result.push(
         {
@@ -666,6 +677,7 @@ export default function TradingGame() {
           price: orderType === "market" ? game.last : +entry,
           color: palette.accent,
           draggable: orderType !== "market",
+          cancelLabel: "Cancel order ticket",
         },
         {
           id: "draft-sl",
@@ -687,7 +699,7 @@ export default function TradingGame() {
     return result;
   }, [
     settings.theme,
-    game?.position,
+    game,
     game?.last,
     game?.status,
     ticket,
@@ -918,6 +930,7 @@ export default function TradingGame() {
                     ) ?? []
                 }
                 anchor={session?.candles.length ?? 0}
+                onCancelLine={onCancelLine}
                 onLine={onLine}
                 onLinePreview={onLinePreview}
                 onDragStart={() => {
@@ -1208,7 +1221,20 @@ export default function TradingGame() {
           <section className="panel order-panel">
             <div className="panel-title">
               <h2>Order ticket</h2>
-              <span className="small-badge">CROSS</span>
+              <div className="ticket-title-actions">
+                <span className="small-badge">CROSS</span>
+                {ticket && active && (
+                  <button
+                    type="button"
+                    className="icon-button"
+                    aria-label="Cancel order ticket"
+                    title="Cancel order ticket"
+                    onClick={cancelTicket}
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
             </div>
             {!ticket || !active ? (
               <div className="ticket-empty">
@@ -1374,7 +1400,7 @@ export default function TradingGame() {
                 </div>
                 <div className="position-grid">
                   <Detail
-                    label="Entry price"
+                    label="Average entry"
                     value={price(game.position.entry)}
                   />
                   <Detail label="Last price" value={price(game.last)} />
@@ -1408,6 +1434,9 @@ export default function TradingGame() {
                   <PriceInput
                     label="Position SL"
                     value={positionSL}
+                    hint={
+                      game.position.sl === null ? "Not set" : "Full position"
+                    }
                     set={setPositionSL}
                     accent="red"
                   />
@@ -1419,6 +1448,27 @@ export default function TradingGame() {
                     accent="green"
                   />
                 </div>
+                <div className="protection-actions">
+                  <button
+                    className="secondary-button compact"
+                    disabled={!active || loading || game.position.sl === null}
+                    onClick={() => onCancelLine("position-sl")}
+                  >
+                    Cancel SL
+                  </button>
+                  <button
+                    className="secondary-button compact"
+                    disabled={!active || loading || game.position.tp === null}
+                    onClick={() => onCancelLine("position-tp")}
+                  >
+                    Cancel TP
+                  </button>
+                </div>
+                <p className="protection-note">
+                  SL and TP each cover {game.position.qty.toFixed(3)} units.
+                  Enter a price and update to add or replace protection; blank
+                  removes it.
+                </p>
                 <button
                   className="secondary-button full compact"
                   disabled={!active || loading}
@@ -1426,7 +1476,7 @@ export default function TradingGame() {
                     safe((g) =>
                       modifyProtection(
                         g,
-                        +positionSL,
+                        positionSL.trim() ? +positionSL : null,
                         positionTP.trim() ? +positionTP : null,
                       ),
                     )
@@ -1684,8 +1734,9 @@ export default function TradingGame() {
               <h3>Define your risk</h3>
               <p>
                 Choose a market, limit, stop-market, or stop-limit entry. A stop
-                loss is required; take profit is optional. Size is calculated
-                automatically from your balance and risk.
+                loss is required for entry sizing; take profit is optional. Size
+                is calculated automatically from your balance and risk. Once
+                filled, position SL and TP can be canceled, re-added, or edited.
               </p>
             </article>
             <article>

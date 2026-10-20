@@ -42,7 +42,8 @@ test("market sizing uses actual slipped entry and deducts the entry fee", () => 
   const g = open();
   const p = g.position!;
   approx(p.entry, 100 * (1 + SLIPPAGE));
-  approx((p.entry - p.sl) * p.qty, 100);
+  assert.notEqual(p.sl, null);
+  approx((p.entry - p.sl!) * p.qty, 100);
   approx(g.balance, 10000 - p.qty * p.entry * FEE);
   assert.equal(g.traded, true);
 });
@@ -177,7 +178,7 @@ test("same-direction additions use a weighted entry and newest protection", () =
   assert.equal(next.position!.sl, 97);
   assert.equal(next.position!.leverage, 5);
 });
-test("moving SL farther away is permitted; removing it is rejected", () => {
+test("moving SL farther away is permitted; invalid numeric SL values are rejected", () => {
   const g = modifyProtection(open(), 90, null);
   assert.equal(g.position!.sl, 90);
   assert.equal(g.position!.tp, null);
@@ -371,4 +372,93 @@ test("invalid stop-limit prices are rejected and pending triggered orders cancel
   assert.equal(ended.orders.length, 0);
   assert.equal(ended.fees, 0);
   assert.equal(ended.balance, 10000);
+});
+
+test("position protection can be canceled independently, restored, and still applies SL first", () => {
+  const original = open({ sl: 95, tp: 110 });
+  const noSL = modifyProtection(original, null, 110);
+  assert.equal(noSL.position!.sl, null);
+  assert.equal(original.position!.sl, 95);
+  const unprotected = modifyProtection(noSL, null, null);
+  const moved = advance(
+    unprotected,
+    candle({ high: 111, low: 94, close: 100 }),
+  );
+  assert.ok(moved.position);
+  assert.equal(moved.trades.length, 0);
+  const restored = modifyProtection(moved, 94, 108);
+  const done = advance(
+    restored,
+    candle({ time: 3, high: 109, low: 93, close: 100 }),
+  );
+  assert.equal(done.position, null);
+  assert.equal(done.trades[0].reason, "Stop loss");
+  approx(done.trades[0].qty, original.position!.qty);
+});
+test("canceling SL leaves TP active and canceling TP leaves SL active", () => {
+  const g = open({ sl: 95, tp: 110 });
+  const tp = advance(
+    modifyProtection(g, null, 110),
+    candle({ low: 94, high: 111 }),
+  );
+  assert.equal(tp.trades[0].reason, "Take profit");
+  const sl = advance(
+    modifyProtection(g, 95, null),
+    candle({ low: 94, high: 111 }),
+  );
+  assert.equal(sl.trades[0].reason, "Stop loss");
+});
+test("canceling SL does not disable cross-margin liquidation or required entry sizing", () => {
+  const g = modifyProtection(open({ sl: 50, risk: 50, tp: null }), null, null);
+  const liq = liquidationPrice(g)!;
+  const done = advance(
+    g,
+    candle({ low: Math.max(0, liq - 1), high: 101, close: 98 }),
+  );
+  assert.equal(done.liquidated, true);
+  assert.equal(done.position, null);
+  assert.throws(() =>
+    submitOrder(createGame(100, 1), {
+      ...order,
+      sl: null as unknown as number,
+    }),
+  );
+});
+test("long and short additions replace protection for the full position at its weighted average entry", () => {
+  for (const side of ["long", "short"] as const) {
+    const long = side === "long";
+    let g = open({ side, sl: long ? 95 : 105, tp: long ? 110 : 90 });
+    g = advance(g, candle({ high: 103, low: 97, close: long ? 102 : 98 }));
+    const first = g.position!;
+    const added = submitOrder(g, {
+      ...order,
+      side,
+      sl: long ? 96 : 104,
+      tp: long ? 112 : 88,
+    });
+    const p = added.position!;
+    const addedQty = p.qty - first.qty;
+    approx(
+      p.entry,
+      (first.entry * first.qty + added.fills.at(-1)!.price * addedQty) / p.qty,
+    );
+    assert.equal(p.sl, long ? 96 : 104);
+    assert.equal(p.tp, long ? 112 : 88);
+    assert.ok(p.qty > first.qty);
+    const reduced = closePosition(added, 0.25);
+    const rest = reduced.position!.qty;
+    const done = advance(
+      reduced,
+      candle({
+        time: 3,
+        open: long ? 102 : 98,
+        high: long ? 113 : 99,
+        low: long ? 101 : 87,
+        close: long ? 112 : 88,
+      }),
+    );
+    assert.equal(done.position, null);
+    assert.equal(done.trades[0].reason, "Take profit");
+    approx(done.fills.at(-1)!.qty, rest);
+  }
 });

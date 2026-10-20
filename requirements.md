@@ -52,7 +52,7 @@ This specification incorporates the decisions agreed on October 20, 2026. The im
 ## Orders, risk, and position management
 
 - Market, limit, stop-market, and stop-limit orders; long and short directions.
-- **SL is required** for every entry and cannot be removed from an open position. TP is optional.
+- **SL is required** for every entry to calculate risk-based size. Once filled, position SL and TP can each be canceled, re-added, or modified. TP is optional, and liquidation remains active without SL.
 - Calculate quantity automatically: **account balance x risk percentage / absolute entry-to-SL distance**. Do not include fees or slippage in the risk budget; market sizing uses the executable slipped entry.
 - Users cannot directly edit quantity. Default risk **1%**, adjustable in settings.
 - Cross margin only; leverage choices **2x, 3x, 5x, 10x**.
@@ -93,3 +93,7 @@ This specification incorporates the decisions agreed on October 20, 2026. The im
 - Fully closed position cycles count as trades; partial closes remain in the same trade. Win rate uses net results after fees. Label drawdown as measured at turn end.
 
 - On desktop, both columns must fill the remaining viewport height before and during games. Initial activity height is 400px (reduced only when the viewport is too short); the chart takes the rest. Dragging changes the split without moving either column’s bottom. Contain empty/loading/chart overlays within their pane. A draggable horizontal divider between the chart and Orders & activity lets users adjust their heights, with minimum pane heights, keyboard adjustment, Escape cancellation, and double-click/Enter reset. Keep the split across turns in the current page session and adapt it to window resizing.
+
+- Order ticket cancel: × on the draft entry/trigger line and ticket header hides all draft lines and resets the ticket, leaving submitted orders and positions intact. Successful submission also resets the ticket.
+- Display every pending entry and attached SL/TP on the chart, with order ID, side, type, quantity, and any stop-limit limit price. An entry-line × cancels that pending order and removes its lines. Show one weighted average entry line for the net position.
+- Position SL/TP each cover the full remaining position; newest same-direction fill replaces both. Allow independent cancellation from chart/sidebar, re-adding via price fields, and modification through fields or dragging. Required entry SL sizing does not prevent canceling the position SL after execution.
