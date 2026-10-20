@@ -45,14 +45,54 @@ Download or update the data **before** building: Next.js copies `public/data` in
 
 An example Nginx configuration is in `deploy/nginx.conf`. Set its `root` to your deployed `out/` directory. Configure your domain/TLS separately for public hosting.
 
-### Docker (optional)
+### Docker Compose (recommended for your server)
+
+Requires Docker Engine and the Docker Compose plugin. Node.js and pnpm are installed inside the build image; neither is required on the host.
+
+Until PR #1 is merged, clone the implementation branch:
+
+```sh
+git clone --branch feat/trading-training-game https://github.com/stevenjoe0906/price_action_game.git
+cd price_action_game
+cp .env.example .env
+docker compose up -d --build
+```
+
+Open **http://YOUR_SERVER_IP:3000**. The first build installs dependencies, downloads free BTCUSDT history, and exports the website. The running container serves only static files with Nginx, includes an HTTP health check, and uses `restart: unless-stopped`. No database, API key, application backend, or data volume is needed. Settings and completed-game history remain in each browser.
+
+Edit `.env` to change the host port (`PORT=3000`) or bind address (`BIND_ADDRESS=0.0.0.0`). For an existing reverse proxy running on the host, use `BIND_ADDRESS=127.0.0.1` and proxy to `http://127.0.0.1:3000`; configure the domain and HTTPS in that proxy. With the default bind address, permit the selected port in your server firewall if needed. Run `docker compose up -d --build` after configuration changes.
+
+Check status/logs or stop the service:
+
+```sh
+docker compose ps
+docker compose logs --tail=100 -f web
+docker compose down
+```
+
+Update the application:
+
+```sh
+git pull --ff-only
+docker compose up -d --build
+```
+
+The dependency and historical-data stages are cached separately, so UI code changes can reuse both. `DATA_FROM` defaults to `2022-01`; an empty `DATA_TO` downloads through the previous UTC calendar month. Keep at least two years for daily-chart sessions. To include newly published monthly archives, change `DATA_REFRESH` in `.env` (for example, to the current month) before rebuilding, or run:
+
+```sh
+DATA_REFRESH=$(date -u +%Y-%m) docker compose up -d --build
+```
+
+Changing the refresh value invalidates the history-download stage. The refreshed archives are baked into the new static export; restarting an existing image alone does not update data.
+
+Without Compose:
 
 ```sh
 docker build -t price-action-game .
-docker run --rm -p 3000:80 price-action-game
+docker run -d --name price-action-game --restart unless-stopped -p 3000:80 price-action-game
 ```
 
-The build downloads the public history and exports the site. The final container only runs Nginx. Local downloaded archives are excluded from the Docker context.
+Local archives, Git metadata, environment files, and build outputs are excluded from the Docker context. The final image contains Nginx and the static export, not the Node.js build toolchain.
 
 ## Game rules
 

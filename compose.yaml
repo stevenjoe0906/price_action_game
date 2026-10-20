@@ -1,0 +1,12 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        DATA_FROM: "${DATA_FROM:-2022-01}"
+        DATA_TO: "${DATA_TO:-}"
+        DATA_REFRESH: "${DATA_REFRESH:-0}"
+    ports:
+      - "${BIND_ADDRESS:-0.0.0.0}:${PORT:-3000}:80"
+    restart: unless-stopped
