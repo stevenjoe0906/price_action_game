@@ -55,6 +55,8 @@ import {
 import {
   orderDraft,
   orderTypeLabel,
+  ORDER_TYPES,
+  DEFAULT_ORDER_TYPE,
   type ChartOrderType,
 } from "@/lib/order-ticket";
 import { CHART_THEMES, type Theme } from "@/lib/theme";
@@ -248,7 +250,7 @@ export default function TradingGame() {
   const [speed, setSpeed] = useState(1);
   const [ticket, setTicket] = useState(false);
   const [side, setSide] = useState<Side>("long");
-  const [orderType, setOrderType] = useState<OrderType>("market");
+  const [orderType, setOrderType] = useState<OrderType>(DEFAULT_ORDER_TYPE);
   const [entry, setEntry] = useState("100");
   const [limitPrice, setLimitPrice] = useState("100.0001");
   const [sl, setSl] = useState("99.5");
@@ -367,6 +369,7 @@ export default function TradingGame() {
       setCandles(s.candles);
       commit(g);
       setTicket(false);
+      setOrderType(DEFAULT_ORDER_TYPE);
       setEntry("100");
       setSl("99.5");
       setTp("101");
@@ -539,7 +542,7 @@ export default function TradingGame() {
   const cancelTicket = () => {
     setTicket(false);
     setSide("long");
-    setOrderType("market");
+    setOrderType(DEFAULT_ORDER_TYPE);
     setLeverage(10);
     const current = gameRef.current?.last ?? 100;
     setEntry(String(current));
@@ -1292,9 +1295,7 @@ export default function TradingGame() {
                   role="tablist"
                   aria-label="Order type"
                 >
-                  {(
-                    ["market", "limit", "stop", "stop-limit"] as OrderType[]
-                  ).map((t) => (
+                  {ORDER_TYPES.map((t) => (
                     <button
                       key={t}
                       role="tab"
@@ -1596,9 +1597,13 @@ export default function TradingGame() {
                 }))
               }
             >
+              <option value="half">Half size (-50%)</option>
+              <option value="small">Small (-30%)</option>
+              <option value="compact">Compact (-15%)</option>
               <option value="comfortable">Comfortable (default)</option>
               <option value="large">Large (+15%)</option>
               <option value="extra-large">Extra large (+30%)</option>
+              <option value="huge">Huge (+50%)</option>
             </select>
           </label>
           <button

@@ -1,4 +1,6 @@
 import type { OrderType, Side } from "./engine";
+export const ORDER_TYPES: readonly OrderType[] = ["stop", "stop-limit", "market", "limit"];
+export const DEFAULT_ORDER_TYPE: OrderType = "stop";
 export type ChartOrderType = Exclude<OrderType, "market">;
 export type ChartOrderChoice = {
   side: Side;

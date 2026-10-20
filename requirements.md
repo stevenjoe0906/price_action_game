@@ -51,7 +51,7 @@ This specification incorporates the decisions agreed on October 20, 2026. The im
 
 ## Orders, risk, and position management
 
-- Market, limit, stop-market, and stop-limit orders; long and short directions.
+- Order tabs: Stop market, Stop limit, Market, Limit. Default new/reset tickets to Stop market; support long and short directions.
 - **SL is required** for every entry to calculate risk-based size. Once filled, position SL and TP can each be canceled, re-added, or modified. TP is optional, and liquidation remains active without SL.
 - Calculate quantity automatically: **account balance x risk percentage / absolute entry-to-SL distance**. Do not include fees or slippage in the risk budget; market sizing uses the executable slipped entry.
 - Users cannot directly edit quantity. Default risk **1%**, adjustable in settings.
@@ -79,7 +79,7 @@ This specification incorporates the decisions agreed on October 20, 2026. The im
 - Risk default 1%; intervals: **5m, 15m, 30m, 1h, 4h, 1d**, default 5m.
 - New interval selection applies to the next chart, without replacing an active chart mid-position.
 - Provide a persistent Light/Dark switch affecting the interface, native chart, and drawing colors.
-- Provide readable default typography and a persistent Comfortable / Large / Extra large display-size preference, including chart labels.
+- Provide readable default typography and persistent -50%, -30%, -15%, default, +15%, +30%, and +50% display-size preferences, including chart labels.
 - Save settings and at most **10 completed-game summaries** in local browser storage.
 - **Do not save active games**. Refreshing/closing the page discards the active game.
 
@@ -101,3 +101,6 @@ This specification incorporates the decisions agreed on October 20, 2026. The im
 - Missing position exits expose Add SL/Add TP in the padded sidebar and SL/TP buttons beside the average-entry chart label. Restore valid defaults from the current market without submitting a new entry; allow custom prices with inline directional validation. Chart text and action buttons must occupy separate non-overlapping slots outside the price axis.
 
 - Position SL/TP action labels must track live drag previews on every pointer move and restore on cancellation, matching the native line and price field. Use a faint neutral current-price guide, distinct from order/protection lines in both themes. Play and held Next/Right Arrow share the selected 1×–20× multiplier, including speed changes during a hold; Next still advances immediately on press.
+
+- Use a linear price scale and uniform native time-tick distribution; retain axis-aligned adaptive grid lines when zooming.
+- Add an Indicators control with EMA 20 enabled by default and a show/hide checkbox. Calculate from revealed closes only, update incrementally during replay, and rebuild on chart changes. No TradingView.com indicator catalog or Pine integration is required.

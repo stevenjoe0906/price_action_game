@@ -101,3 +101,10 @@ test("invalid themes preserve prior display and trading preferences", (t) => {
     theme: "dark",
   });
 });
+
+test("display size choices include -50%, -30%, -15%, and +50% without changing existing presets", () => {
+  assert.deepEqual(Object.values(DISPLAY_SIZES), [0.5, 0.7, 0.85, 1, 1.15, 1.3, 1.5]);
+  assert.equal(DISPLAY_SIZES.comfortable, 1);
+  assert.equal(DISPLAY_SIZES.large, 1.15);
+  assert.equal(DISPLAY_SIZES["extra-large"], 1.3);
+});

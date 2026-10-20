@@ -2,9 +2,13 @@ import { INTERVALS, type Interval } from "./market";
 import type { Theme } from "./theme";
 import type { Game, Trade, Turn } from "./engine";
 export const DISPLAY_SIZES = {
+  half: 0.5,
+  small: 0.7,
+  compact: 0.85,
   comfortable: 1,
   large: 1.15,
   "extra-large": 1.3,
+  huge: 1.5,
 } as const;
 export type DisplaySize = keyof typeof DISPLAY_SIZES;
 export type Settings = {

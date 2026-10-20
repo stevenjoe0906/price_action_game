@@ -2,9 +2,11 @@
 import { useEffect, useRef, useState } from "react";
 import {
   CandlestickSeries,
+  LineSeries,
   ColorType,
   CrosshairMode,
   LineStyle,
+  PriceScaleMode,
   createChart,
   type IChartApi,
   type ISeriesApi,
@@ -12,6 +14,7 @@ import {
   type UTCTimestamp,
 } from "lightweight-charts";
 import ChartDrawings from "./ChartDrawings";
+import { calculateEMA, nextEMA } from "@/lib/indicators";
 import ChartOrderMenu from "./ChartOrderMenu";
 import ChartLineControls from "./ChartLineControls";
 import type { ChartOrderType } from "@/lib/order-ticket";
@@ -60,6 +63,9 @@ export default function PriceChart({
     y: number;
     price: number;
   } | null>(null);
+  const [showEMA20, setShowEMA20] = useState(true);
+  const ema = useRef<ISeriesApi<"Line"> | null>(null);
+  const emaValue = useRef<number | null>(null);
   const container = useRef<HTMLDivElement>(null);
   const api = useRef<IChartApi | null>(null);
   const series = useRef<ISeriesApi<"Candlestick"> | null>(null);
@@ -114,6 +120,7 @@ export default function PriceChart({
         horzLines: { color: "#1a2226" },
       },
       rightPriceScale: {
+        mode: PriceScaleMode.Normal,
         borderColor: "#273136",
         scaleMargins: { top: 0.12, bottom: 0.14 },
       },
@@ -121,6 +128,8 @@ export default function PriceChart({
         borderColor: "#273136",
         rightOffset: 8,
         barSpacing: 7,
+        uniformDistribution: true,
+        allowBoldLabels: false,
         timeVisible: true,
         tickMarkFormatter: relativeTime,
       },
@@ -148,6 +157,15 @@ export default function PriceChart({
     });
     api.current = chart;
     series.current = s;
+    ema.current = chart.addSeries(LineSeries, {
+      color: "#efb464",
+      lineWidth: 2,
+      title: "EMA 20",
+      priceLineVisible: false,
+      lastValueVisible: false,
+      crosshairMarkerVisible: false,
+      priceFormat: { type: "price", precision: 4, minMove: 0.0001 },
+    });
     let frame = 0;
     const update = () => {
       cancelAnimationFrame(frame);
@@ -173,6 +191,8 @@ export default function PriceChart({
       chart.remove();
       api.current = null;
       series.current = null;
+      ema.current = null;
+      emaValue.current = null;
       count.current = 0;
       firstTime.current = 0;
     };
@@ -181,13 +201,23 @@ export default function PriceChart({
     if (!series.current || !api.current || !candles.length) return;
     const changed =
       firstTime.current !== candles[0].time || candles.length < count.current;
-    if (changed || !count.current || candles.length > count.current + 1)
+    if (changed || !count.current || candles.length > count.current + 1) {
       series.current.setData(
         candles.map((b) => ({ ...b, time: b.time as UTCTimestamp })),
       );
-    else if (candles.length > count.current) {
+      const values = calculateEMA(candles, 20);
+      ema.current?.setData(
+        values.map((point) => ({ ...point, time: point.time as UTCTimestamp })),
+      );
+      emaValue.current = values.at(-1)?.value ?? null;
+    } else if (candles.length > count.current) {
       const b = candles[candles.length - 1];
       series.current.update({ ...b, time: b.time as UTCTimestamp });
+      const value = emaValue.current === null
+        ? b.close
+        : nextEMA(emaValue.current, b.close, 20);
+      ema.current?.update({ time: b.time as UTCTimestamp, value });
+      emaValue.current = value;
     }
     if (changed || !count.current)
       api.current.timeScale().setVisibleLogicalRange({
@@ -198,6 +228,9 @@ export default function PriceChart({
     firstTime.current = candles[0].time;
     redraw((n) => n + 1);
   }, [candles]);
+  useEffect(() => {
+    ema.current?.applyOptions({ visible: showEMA20 });
+  }, [showEMA20]);
   useEffect(() => {
     const palette = CHART_THEMES[theme];
     api.current?.applyOptions({
@@ -223,6 +256,7 @@ export default function PriceChart({
         },
       },
     });
+    ema.current?.applyOptions({ color: theme === "dark" ? "#efb464" : "#a86d18" });
     series.current?.applyOptions({
       priceLineColor: palette.currentPrice,
       upColor: palette.up,
@@ -306,7 +340,7 @@ export default function PriceChart({
             !api.current ||
             !container.current ||
             (event.target instanceof Element &&
-              event.target.closest(".drawing-toolbar"))
+              event.target.closest(".drawing-toolbar, .chart-indicators"))
           )
             return;
           const bounds = container.current.getBoundingClientRect();
@@ -323,6 +357,22 @@ export default function PriceChart({
         }}
       >
         <div ref={container} className="chart-canvas" />
+        <details
+          className="chart-indicators"
+          style={{ right: (api.current?.priceScale("right").width() ?? 80) + 12 }}
+          onPointerDown={(event) => event.stopPropagation()}
+          onContextMenu={(event) => event.stopPropagation()}
+        >
+          <summary>Indicators</summary>
+          <label>
+            <input
+              type="checkbox"
+              checked={showEMA20}
+              onChange={(event) => setShowEMA20(event.target.checked)}
+            />
+            EMA 20
+          </label>
+        </details>
         <ChartDrawings
           chart={api.current}
           series={series.current}
