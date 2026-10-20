@@ -57,14 +57,14 @@ The build downloads the public history and exports the site. The final container
 ## Game rules
 
 - A new game starts with **10,000 USDT**. Balance carries across **20 turns**. Liquidation ends the game immediately. There is no manual End Game button.
-- Each turn randomly selects a historical start at or after January 1, 2022. It shows **500–1,500 initial candles**, repicking when history is insufficient. The initial final close is normalized to **100** using one fixed OHLC multiplier throughout the turn. Calendar dates are hidden.
+- Each turn randomly selects a historical start at or after January 1, 2022. It shows **500–1,500 initial candles**, repicking when history is insufficient. The initial final close is normalized to **100** using one fixed OHLC multiplier throughout the turn. Calendar dates are hidden. The market symbol and Bitcoin icon are hidden during active turns and revealed after the turn ends.
 - Replay has **no fixed candle limit**. Play at 1×, 2×, 5×, 10×, or 20×; one candle per second at 1×. **Space** toggles playback; **Right Arrow** steps or advances at five candles per second while held. The Next button supports holding too. Playback pauses in a hidden tab.
 - **Finish turn** cancels every pending order and closes the open position at the **last visible close**, with market slippage and fees. It reveals no further candles. Reaching the latest closed API candle or the end of the installed archive pack automatically finishes the turn. Data gaps and connection errors pause playback instead of fabricating prices.
 - **Repick** changes the chart without consuming a turn, until an order is successfully submitted. Canceling that order does not unlock Repick.
 - Market, limit, and stop-market entries support long and short directions; leverage is 2×, 3×, 5×, or 10×. **SL is required**, TP is optional. SL may later be moved farther away, increasing the original risk, but cannot be removed.
 - Quantity is **balance × risk percentage ÷ entry-to-SL distance**. Market entries use the slipped entry; pending quantities are fixed at submission. Fees and slippage are additional to the risk budget. Insufficient-margin orders are rejected, including at fill time. Pending orders conservatively reserve margin.
 - There is one net position. Opposite fills reduce it; excess quantity reverses it. Same-direction fills use a weighted average entry and apply the latest order's SL, TP, and leverage to the entire combined position. Position size is not manually editable.
-- Close 25%, 50%, 75%, or 100% of the **remaining** position. Chart lines and price fields allow protection updates.
+- Close 25%, 50%, 75%, or 100% of the **remaining** position. Grab anywhere along an entry/SL/TP line to drag it. The line, axis price, and form field update live. Dragging pauses playback; position protection is validated and committed on release. Escape cancels a drag. Focus a line and use Up/Down (Shift for larger steps) for keyboard adjustments. Chart lines and price fields allow protection updates.
 - Every executed fill pays **0.05%**. Market orders, stop entries, SL exits, and manual/turn-end closes have **0.01% adverse slippage**. Limit and TP fills do not have market slippage. Funding is omitted.
 
 ### Deliberate simulation simplifications
@@ -77,9 +77,13 @@ Prices and quantities are normalized: displayed **units are not literal BTC**. S
 
 Trade count and win rate use **fully closed position cycles**, net of entry/exit fees. Partial closes accumulate within that cycle. Reversing closes one cycle and starts another. Summary drawdown measures **turn-end balances**, not intrabar equity drawdown.
 
+## Display and readability
+
+The default UI uses larger text, wider trading panels, and 14-pixel chart labels. In **Settings → Display size**, choose Comfortable, Large (+15%), or Extra large (+30%). This scales UI typography, panel widths, and chart labels together without requiring browser zoom. Existing saved risk/interval settings are retained when upgrading.
+
 ## Persistence
 
-Settings and the most recent **10 completed game summaries** are stored in browser localStorage. Summaries include per-turn results and closed trades. The active game is **not saved**: refreshing or closing the page discards it. A new game always starts at 10,000 USDT. Browser-storage failures are reported without blocking the game.
+Settings (including display size) and the most recent **10 completed game summaries** are stored in browser localStorage. Summaries include per-turn results and closed trades. The active game is **not saved**: refreshing or closing the page discards it. A new game always starts at 10,000 USDT. Browser-storage failures are reported without blocking the game.
 
 ## Verification
 

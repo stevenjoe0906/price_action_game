@@ -3,7 +3,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Price Action — Trading Practice",
   description:
-    "Train your eye. Practice BTC price action with blind historical replay, risk-based orders, and twenty turns per game.",
+    "Train your eye. Practice price action with blind historical replay, risk-based orders, and twenty turns per game.",
 };
 export default function RootLayout({
   children,

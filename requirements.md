@@ -18,7 +18,7 @@ This specification incorporates the decisions agreed on October 20, 2026. The im
 - Initially show no chart; provide Start New Game.
 - Each turn chooses a random historical start at or after **2022-01-01 00:00 UTC**, before the latest available fully closed candle.
 - Load up to **1,500 initial candles**. If fewer than **500** are available, repick.
-- Normalize every OHLC value by one fixed multiplier so the last initial close is **100**. Use the same scale throughout that turn. Hide calendar dates to support blind practice.
+- Normalize every OHLC value by one fixed multiplier so the last initial close is **100**. Use the same scale throughout that turn. Hide calendar dates to support blind practice. Hide the market symbol and asset icon during active turns; reveal them when the turn ends.
 - There is **no fixed future-candle limit**. Do not reveal future candles after a turn ends.
 - **Finish Turn** cancels every pending order, including stop entries, and closes the position at the last displayed close, with applicable slippage and fees. No future candle is used.
 - Reaching the latest closed API candle or the end of the installed historical pack automatically finishes the turn.
@@ -31,7 +31,7 @@ This specification incorporates the decisions agreed on October 20, 2026. The im
 - Speeds: **1x, 2x, 5x, 10x, 20x**.
 - Next reveals one candle; holding Next or Right Arrow advances five candles per second. Releasing stops it.
 - Space toggles playback; controls do not interfere with typing in inputs.
-- Show draggable entry, SL, and optional TP lines after Start Trading.
+- Show draggable entry, SL, and optional TP lines after Start Trading. Support dragging anywhere along the line, with live line, price-axis label, and input updates. Pause replay while dragging, validate protection on release, and let Escape cancel.
 - Permit zooming and panning. Future candles must not affect the visible chart or its price scale.
 
 ## Orders, risk, and position management
@@ -63,6 +63,7 @@ This specification incorporates the decisions agreed on October 20, 2026. The im
 - Fixed starting balance: 10,000 USDT, reset on every new game.
 - Risk default 1%; intervals: **5m, 15m, 30m, 1h, 4h, 1d**, default 5m.
 - New interval selection applies to the next chart, without replacing an active chart mid-position.
+- Provide readable default typography and a persistent Comfortable / Large / Extra large display-size preference, including chart labels.
 - Save settings and at most **10 completed-game summaries** in local browser storage.
 - **Do not save active games**. Refreshing/closing the page discards the active game.
 

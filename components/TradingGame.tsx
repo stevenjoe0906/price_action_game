@@ -38,6 +38,8 @@ import {
 } from "@/lib/market";
 import {
   defaults,
+  DISPLAY_SIZES,
+  type DisplaySize,
   loadSettings,
   loadSummaries,
   saveSettings,
@@ -261,6 +263,9 @@ export default function TradingGame() {
     setSettings(loadSettings());
     setSaved(loadSummaries());
   }, []);
+  useEffect(() => {
+    document.documentElement.style.fontSize = `${16 * DISPLAY_SIZES[settings.displaySize]}px`;
+  }, [settings.displaySize]);
   useEffect(() => {
     if (!toast) return;
     const id = setTimeout(() => setToast(""), 6000);
@@ -538,14 +543,37 @@ export default function TradingGame() {
       setError(e instanceof Error ? e.message : "Order rejected.");
     }
   };
-  const onLine = (id: string, p: number) => {
+  const onLinePreview = (id: string, p: number) => {
     if (id === "draft-entry") setEntry(String(p));
     else if (id === "draft-sl") setSl(String(p));
     else if (id === "draft-tp") setTp(String(p));
-    else if (id === "position-sl")
-      safe((g) => modifyProtection(g, p, g.position?.tp ?? null));
-    else if (id === "position-tp")
-      safe((g) => modifyProtection(g, g.position!.sl, p));
+    else if (id === "position-sl") setPositionSL(String(p));
+    else if (id === "position-tp") setPositionTP(String(p));
+  };
+  const onLine = (id: string, p: number) => {
+    if (id.startsWith("draft-")) {
+      onLinePreview(id, p);
+      return;
+    }
+    const current = gameRef.current;
+    if (!current?.position) return;
+    try {
+      commit(
+        modifyProtection(
+          current,
+          id === "position-sl" ? p : current.position.sl,
+          id === "position-tp" ? p : current.position.tp,
+        ),
+      );
+      setError("");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Unable to update protection.");
+    } finally {
+      // Invalid drops restore both the line and its input; previews never mutate the engine.
+      const position = gameRef.current?.position;
+      setPositionSL(position ? String(+position.sl.toFixed(6)) : "");
+      setPositionTP(position?.tp ? String(+position.tp.toFixed(6)) : "");
+    }
   };
   const lines = useMemo<ChartLine[]>(() => {
     const result: ChartLine[] = [];
@@ -762,10 +790,18 @@ export default function TradingGame() {
         <section className="chart-panel panel">
           <div className="chart-heading">
             <div className="instrument">
-              <span className="bitcoin">₿</span>
+              <span className={`bitcoin ${active ? "hidden-symbol" : ""}`}>
+                {active ? <Icon name="shield" size={20} /> : "₿"}
+              </span>
               <div>
                 <strong>
-                  BTC <span>/ USDT</span>
+                  {active ? (
+                    <>Hidden market</>
+                  ) : (
+                    <>
+                      BTC <span>/ USDT</span>
+                    </>
+                  )}
                 </strong>
                 <small>PERPETUAL · HISTORICAL REPLAY</small>
               </div>
@@ -777,7 +813,8 @@ export default function TradingGame() {
               <Icon name="shield" size={14} />
               <span>Blind mode</span>
               <span className="tooltip">
-                Prices normalized to 100. Dates hidden.
+                Prices normalized to 100. Dates hidden. Symbol revealed after
+                the turn.
               </span>
             </div>
           </div>
@@ -826,6 +863,12 @@ export default function TradingGame() {
               }
               anchor={session?.candles.length ?? 0}
               onLine={onLine}
+              onLinePreview={onLinePreview}
+              onDragStart={() => {
+                setPlaying(false);
+                stopHold();
+              }}
+              textScale={DISPLAY_SIZES[settings.displaySize]}
             />
           ) : (
             <div className="empty-chart">
@@ -1403,6 +1446,22 @@ export default function TradingGame() {
               ))}
             </select>
           </label>
+          <label className="field-label">
+            Display size <span>Text, controls, and chart labels</span>
+            <select
+              value={draft.displaySize}
+              onChange={(event) =>
+                setDraft((d) => ({
+                  ...d,
+                  displaySize: event.target.value as DisplaySize,
+                }))
+              }
+            >
+              <option value="comfortable">Comfortable (default)</option>
+              <option value="large">Large (+15%)</option>
+              <option value="extra-large">Extra large (+30%)</option>
+            </select>
+          </label>
           <button
             className="primary-button full"
             onClick={() => {
@@ -1508,7 +1567,8 @@ export default function TradingGame() {
               <span>01</span>
               <h3>Read the context</h3>
               <p>
-                Start with 500–1,500 real BTCUSDT perpetual candles. Prices are
+                Start with 500–1,500 real{" "}
+                {active ? "market" : "BTCUSDT perpetual"} candles. Prices are
                 scaled so the initial close is 100. Dates stay hidden.
               </p>
             </article>
@@ -1555,8 +1615,9 @@ export default function TradingGame() {
               0.05%. Pending orders reserve margin. Cross-margin liquidation
               uses a fixed 0.5% maintenance rate and candle prices, without
               funding or mark-price feeds. Quantities are normalized units, not
-              literal BTC. Trade statistics count fully closed position cycles;
-              partial closes belong to the same trade.
+              literal units of the underlying asset. Trade statistics count
+              fully closed position cycles; partial closes belong to the same
+              trade.
             </p>
             <p>
               Repick is permanently locked for the turn after an order is

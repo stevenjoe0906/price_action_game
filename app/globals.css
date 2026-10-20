@@ -18,7 +18,7 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: Arial, Helvetica, sans-serif;
-  font-size: 13px;
+  font-size: 1rem;
   -webkit-font-smoothing: antialiased;
 }
 button,
@@ -94,14 +94,14 @@ input[type="number"] {
 }
 select {
   padding: 9px 27px 9px 10px;
-  font-size: 12px;
+  font-size: 1rem;
 }
 option {
   background: #151d21;
 }
 kbd {
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 0.875rem;
   display: inline-block;
   line-height: 16px;
   min-width: 18px;
@@ -113,7 +113,7 @@ kbd {
   background: #1b2429;
 }
 .app-shell {
-  max-width: 1920px;
+  max-width: 2400px;
   margin: 0 auto;
   padding: 0 32px;
 }
@@ -129,7 +129,7 @@ kbd {
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: 23px;
+  font-size: 1.75rem;
   font-weight: 700;
   letter-spacing: -1px;
 }
@@ -139,7 +139,7 @@ kbd {
 }
 .brand small {
   display: block;
-  font-size: 8px;
+  font-size: 0.75rem;
   letter-spacing: 3.1px;
   color: var(--muted);
   margin: 5px 0 0 2px;
@@ -185,7 +185,7 @@ kbd {
   align-items: center;
   gap: 9px;
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 0.8125rem;
   letter-spacing: 1px;
   color: var(--muted);
 }
@@ -217,7 +217,7 @@ kbd {
   padding: 6px;
 }
 .text-button {
-  font-size: 12px;
+  font-size: 1rem;
 }
 .icon-button {
   height: 32px;
@@ -235,12 +235,12 @@ kbd {
   border: 1px solid #2d3a40;
   border-radius: 5px;
   padding: 0 12px;
-  font-size: 12px;
+  font-size: 1rem;
 }
 .history-button b {
   background: #2c3c35;
   color: var(--accent);
-  font-size: 10px;
+  font-size: 0.875rem;
   padding: 2px 5px;
   border-radius: 3px;
 }
@@ -254,12 +254,12 @@ kbd {
 .eyebrow {
   font-family: var(--mono);
   color: var(--accent);
-  font-size: 9px;
+  font-size: 0.8125rem;
   letter-spacing: 1.8px;
   margin-bottom: 11px;
 }
 h1 {
-  font-size: 27px;
+  font-size: 2rem;
   font-weight: 500;
   letter-spacing: -0.9px;
 }
@@ -278,12 +278,12 @@ h1 > span {
 }
 .game-progress > div:first-child > span {
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: 0.75rem;
   letter-spacing: 0.6px;
   color: var(--muted);
 }
 .game-progress strong {
-  font-size: 12px;
+  font-size: 1rem;
   font-family: var(--mono);
   font-weight: 400;
   white-space: nowrap;
@@ -329,16 +329,16 @@ h1 > span {
 }
 .metric > span {
   color: #9aa7aa;
-  font-size: 11px;
+  font-size: 0.9375rem;
 }
 .metric strong {
   font-family: var(--mono);
-  font-size: 23px;
+  font-size: 1.75rem;
   letter-spacing: -0.7px;
   font-weight: 500;
 }
 .metric small {
-  font-size: 10px;
+  font-size: 0.875rem;
   color: #63757b;
 }
 .positive {
@@ -349,11 +349,11 @@ h1 > span {
 }
 .muted {
   color: var(--muted);
-  font-size: 11px;
+  font-size: 0.9375rem;
 }
 .workspace {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 312px;
+  grid-template-columns: minmax(0, 1fr) 25rem;
   gap: 18px;
   align-items: start;
 }
@@ -387,12 +387,12 @@ h1 > span {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
+  font-size: 1.875rem;
   font-weight: 700;
 }
 .instrument strong {
   display: block;
-  font-size: 14px;
+  font-size: 1.125rem;
   font-weight: 600;
   letter-spacing: 0.2px;
 }
@@ -404,7 +404,7 @@ h1 > span {
   display: block;
   font-family: var(--mono);
   color: #667980;
-  font-size: 8px;
+  font-size: 0.75rem;
   letter-spacing: 0.6px;
   margin-top: 6px;
 }
@@ -412,7 +412,7 @@ h1 > span {
   font-family: var(--mono);
   background: #202a2e;
   border: 1px solid #2b383e;
-  font-size: 11px;
+  font-size: 0.9375rem;
   color: #a8b6b7;
   padding: 4px 7px;
   border-radius: 4px;
@@ -426,7 +426,7 @@ h1 > span {
   border: 1px solid #b7cd7926;
   color: #bacb92;
   padding: 5px 7px;
-  font-size: 10px;
+  font-size: 0.875rem;
   border-radius: 4px;
   position: relative;
 }
@@ -455,7 +455,7 @@ h1 > span {
   border-top: 1px solid #1c272c;
   border-bottom: 1px solid #1c272c;
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 0.875rem;
   color: #6f858c;
 }
 .ohlc-bar b {
@@ -465,7 +465,7 @@ h1 > span {
 }
 .bar-count {
   margin-left: auto;
-  font-size: 9px;
+  font-size: 0.8125rem;
 }
 .chart-surface {
   height: 558px;
@@ -482,39 +482,71 @@ h1 > span {
   transform: translate(-50%, -50%);
   pointer-events: none;
   letter-spacing: 7px;
-  font-size: 27px;
+  font-size: 2rem;
   font-weight: 700;
   color: #a4b5ac08;
   white-space: nowrap;
 }
 .chart-watermark span {
   display: block;
-  font-size: 7px;
+  font-size: 0.75rem;
   text-align: center;
   letter-spacing: 2px;
   margin-top: 10px;
 }
-.line-grip {
+.chart-line-target {
   position: absolute;
-  left: 12px;
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: 18px;
+  min-height: 18px;
   transform: translateY(-50%);
-  border: 1px solid;
-  border-radius: 3px;
-  background: #141c22;
-  font-family: var(--mono);
-  font-size: 8px;
-  height: 21px;
-  padding: 0 6px;
+  border: 0;
+  padding: 0 12px;
+  background: transparent;
   z-index: 2;
   cursor: ns-resize;
   touch-action: none;
-  gap: 7px;
+  user-select: none;
+  justify-content: flex-start;
+}
+.chart-line-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  background: #141c22;
+  padding: 3px 7px;
+  font: 0.75rem var(--mono);
+  pointer-events: none;
+}
+.chart-line-label strong {
+  font-weight: 400;
+  opacity: 0.8;
+}
+.chart-line-target:hover,
+.chart-line-target.is-dragging {
+  background: color-mix(in srgb, currentColor 12%, transparent);
+  filter: none;
+}
+.chart-line-target:hover .chart-line-label,
+.chart-line-target.is-dragging .chart-line-label {
+  background: #27343a;
+}
+.chart-line-target.is-dragging {
+  z-index: 4;
+}
+.chart-line-target:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 1px;
 }
 .fill-marker {
   position: absolute;
   transform: translate(-50%, -50%);
   pointer-events: none;
-  font-size: 12px;
+  font-size: 1rem;
   text-shadow: 0 1px 4px #000;
   z-index: 2;
 }
@@ -539,14 +571,14 @@ h1 > span {
   opacity: 0.85;
 }
 .empty-chart h2 {
-  font-size: 25px;
+  font-size: 1.875rem;
   font-weight: 500;
   letter-spacing: -0.6px;
   margin: 2px 0 14px;
 }
 .empty-chart p {
   color: #879791;
-  font-size: 12px;
+  font-size: 1rem;
   line-height: 1.9;
   margin-bottom: 25px;
 }
@@ -557,18 +589,18 @@ h1 > span {
   border-radius: 5px;
   padding: 10px 15px;
   font-weight: 600;
-  font-size: 12px;
+  font-size: 1rem;
 }
 .primary-button.large {
   padding: 13px 19px;
   gap: 12px;
-  font-size: 12px;
+  font-size: 1rem;
 }
 .empty-notes {
   display: flex;
   gap: 15px;
   color: #62736c;
-  font-size: 9px;
+  font-size: 0.8125rem;
   margin-top: 24px;
 }
 .empty-notes span + span:before {
@@ -598,7 +630,7 @@ h1 > span {
   background: #c5db8815;
   color: var(--accent);
   border-radius: 4px;
-  font-size: 11px;
+  font-size: 0.9375rem;
 }
 .play-button svg {
   width: 14px;
@@ -614,7 +646,7 @@ h1 > span {
   background: transparent;
   color: #a7b7bc;
   border-radius: 4px;
-  font-size: 11px;
+  font-size: 0.9375rem;
 }
 .next-button svg {
   width: 13px;
@@ -625,17 +657,17 @@ h1 > span {
 }
 .playback-buttons select {
   height: 33px;
-  font-size: 10px;
+  font-size: 0.875rem;
   background: #172125;
   padding: 5px 6px;
 }
 .repick {
-  font-size: 10px;
+  font-size: 0.875rem;
   padding: 7px;
 }
 .finish-button {
   height: 33px;
-  font-size: 10px;
+  font-size: 0.875rem;
   border: 1px solid #3c494f;
   color: #c7d0d0;
   background: #222c30;
@@ -643,7 +675,7 @@ h1 > span {
   border-radius: 4px;
 }
 .turn-buttons .primary-button {
-  font-size: 10px;
+  font-size: 0.875rem;
   padding: 8px 10px;
 }
 .chart-footer {
@@ -654,7 +686,7 @@ h1 > span {
   padding: 12px 18px;
   border-top: 1px solid #202a2f;
   color: #647b83;
-  font-size: 9px;
+  font-size: 0.8125rem;
 }
 .chart-footer > span:first-child {
   display: flex;
@@ -662,7 +694,7 @@ h1 > span {
   gap: 7px;
 }
 .chart-footer kbd {
-  font-size: 9px;
+  font-size: 0.8125rem;
   line-height: 13px;
   min-width: 15px;
 }
@@ -684,12 +716,12 @@ h1 > span {
 }
 .panel-title h2,
 .activity-heading h2 {
-  font-size: 12px;
+  font-size: 1rem;
   font-weight: 500;
 }
 .small-badge {
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: 0.75rem;
   color: #8c9da2;
   background: #1e292e;
   border: 1px solid #2b383e;
@@ -713,13 +745,13 @@ h1 > span {
   margin-bottom: 19px;
 }
 .ticket-empty h3 {
-  font-size: 17px;
+  font-size: 1.25rem;
   font-weight: 400;
   letter-spacing: -0.4px;
   margin-bottom: 10px;
 }
 .ticket-empty p {
-  font-size: 11px;
+  font-size: 0.9375rem;
   color: var(--muted);
   line-height: 1.8;
   margin-bottom: 23px;
@@ -731,7 +763,7 @@ h1 > span {
   color: #bed0c8;
   padding: 10px 13px;
   border-radius: 4px;
-  font-size: 11px;
+  font-size: 0.9375rem;
 }
 .full {
   width: 100%;
@@ -739,7 +771,7 @@ h1 > span {
 }
 .compact {
   padding: 8px 10px;
-  font-size: 10px;
+  font-size: 0.875rem;
 }
 .order-tabs {
   display: flex;
@@ -753,7 +785,7 @@ h1 > span {
   border: 0;
   border-bottom: 2px solid transparent;
   padding: 0 0 10px;
-  font-size: 10px;
+  font-size: 0.875rem;
 }
 .order-tabs button.active {
   color: var(--accent);
@@ -775,7 +807,7 @@ h1 > span {
   padding: 8px 4px;
   color: #788e93;
   border-radius: 3px;
-  font-size: 11px;
+  font-size: 0.9375rem;
 }
 .side-toggle .selected.long {
   color: var(--green);
@@ -792,7 +824,7 @@ h1 > span {
   align-items: center;
   justify-content: space-between;
   margin: 0 15px 16px;
-  font-size: 10px;
+  font-size: 0.875rem;
   color: #859b9f;
 }
 .leverage-row > div {
@@ -805,7 +837,7 @@ h1 > span {
   border: 1px solid #26373e;
   border-radius: 3px;
   padding: 4px 7px;
-  font: 10px var(--mono);
+  font: 0.875rem var(--mono);
 }
 .leverage-row button.active {
   background: #c5db8813;
@@ -821,12 +853,12 @@ h1 > span {
   display: flex;
   justify-content: space-between;
   gap: 5px;
-  font-size: 10px;
+  font-size: 0.875rem;
   color: #adbbbd;
   margin-bottom: 7px;
 }
 .price-input small {
-  font-size: 8px;
+  font-size: 0.75rem;
   color: #637b82;
 }
 .price-input > div {
@@ -845,7 +877,7 @@ h1 > span {
   border: 0;
   background: none;
   padding: 0;
-  font-size: 12px;
+  font-size: 1rem;
   font-family: var(--mono);
   width: 100%;
   min-width: 0;
@@ -873,7 +905,7 @@ h1 > span {
   margin: 0 0 12px;
 }
 .protection-inputs .price-input > span {
-  font-size: 9px;
+  font-size: 0.8125rem;
 }
 .risk-box {
   padding: 11px 12px;
@@ -888,7 +920,7 @@ h1 > span {
 .risk-box > div {
   display: flex;
   justify-content: space-between;
-  font-size: 10px;
+  font-size: 0.875rem;
   gap: 8px;
 }
 .risk-box span {
@@ -897,12 +929,12 @@ h1 > span {
 .risk-box strong {
   font-family: var(--mono);
   font-weight: 400;
-  font-size: 10px;
+  font-size: 0.875rem;
   color: #d2dfc2;
 }
 .risk-box small {
   color: #7c9184;
-  font-size: 9px;
+  font-size: 0.8125rem;
 }
 .submit-order {
   margin: 0 15px;
@@ -910,7 +942,7 @@ h1 > span {
   padding: 11px 12px;
   border-radius: 4px;
   border: 1px solid transparent;
-  font-size: 11px;
+  font-size: 0.9375rem;
   font-weight: 600;
   justify-content: space-between;
 }
@@ -923,14 +955,14 @@ h1 > span {
   color: #371b1b;
 }
 .ticket-footnote {
-  font-size: 9px;
+  font-size: 0.8125rem;
   line-height: 1.6;
   color: #647b83;
   margin: 11px 15px 16px;
 }
 .position-badge {
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: 0.75rem;
   border-radius: 3px;
   padding: 4px 6px;
   white-space: nowrap;
@@ -948,16 +980,16 @@ h1 > span {
   text-align: center;
 }
 .empty-dash {
-  font-size: 30px;
+  font-size: 2.25rem;
   color: #3f535a;
 }
 .no-position p {
-  font-size: 11px;
+  font-size: 0.9375rem;
   color: #a2b2b4;
   margin: 7px 0;
 }
 .no-position small {
-  font-size: 9px;
+  font-size: 0.8125rem;
   color: #607980;
 }
 .turn-status {
@@ -973,20 +1005,20 @@ h1 > span {
   padding: 6px 17px;
 }
 .detail > span {
-  font-size: 10px;
+  font-size: 0.875rem;
   color: #7e969e;
 }
 .detail > strong {
-  font: 11px var(--mono);
+  font: 0.9375rem var(--mono);
   font-weight: 400;
 }
 .position-pnl {
-  font: 25px var(--mono);
+  font: 1.875rem var(--mono);
   padding: 19px 16px 16px;
 }
 .position-pnl small {
   display: block;
-  font: 9px Arial;
+  font: 0.8125rem Arial;
   color: var(--muted);
   margin-top: 8px;
 }
@@ -1002,7 +1034,7 @@ h1 > span {
   gap: 6px;
 }
 .position-grid .detail span {
-  font-size: 9px;
+  font-size: 0.8125rem;
 }
 .close-fractions {
   display: flex;
@@ -1014,14 +1046,14 @@ h1 > span {
   align-items: center;
 }
 .close-fractions > span {
-  font-size: 10px;
+  font-size: 0.875rem;
   color: var(--muted);
   margin-right: auto;
 }
 .close-fractions button {
   background: #1b272d;
   color: #9db0b7;
-  font: 9px var(--mono);
+  font: 0.8125rem var(--mono);
   border: 1px solid #2f414a;
   border-radius: 3px;
   padding: 6px;
@@ -1054,7 +1086,7 @@ h1 > span {
   gap: 10px;
   min-height: 85px;
   color: #647e86;
-  font-size: 11px;
+  font-size: 0.9375rem;
 }
 .table-scroll {
   overflow: auto;
@@ -1065,10 +1097,10 @@ table {
   border-collapse: collapse;
   white-space: nowrap;
   text-align: left;
-  font-size: 11px;
+  font-size: 0.9375rem;
 }
 th {
-  font-size: 9px;
+  font-size: 0.8125rem;
   font-weight: 400;
   letter-spacing: 0.3px;
   background: #131d22;
@@ -1083,7 +1115,7 @@ th {
 }
 td {
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 0.875rem;
 }
 td:first-child {
   font-family: Arial;
@@ -1101,7 +1133,7 @@ th:last-child {
   gap: 18px;
   align-items: center;
   border-bottom: 1px solid var(--border);
-  font-size: 10px;
+  font-size: 0.875rem;
 }
 .pending-row > span:not(.position-badge) {
   color: #748d96;
@@ -1114,7 +1146,7 @@ th:last-child {
 }
 .pending-row .text-button {
   margin-left: auto;
-  font-size: 10px;
+  font-size: 0.875rem;
 }
 .app-footer {
   padding: 24px 0 25px;
@@ -1122,11 +1154,11 @@ th:last-child {
   justify-content: space-between;
   gap: 20px;
   color: #536c75;
-  font-size: 9px;
+  font-size: 0.8125rem;
   align-items: center;
 }
 .footer-logo {
-  font-size: 18px;
+  font-size: 1.375rem;
   font-weight: 700;
   letter-spacing: -1px;
   color: #788e7c;
@@ -1170,7 +1202,7 @@ th:last-child {
   margin-bottom: 26px;
 }
 .modal-heading h2 {
-  font-size: 23px;
+  font-size: 1.75rem;
   font-weight: 400;
   letter-spacing: -0.7px;
   line-height: 1.25;
@@ -1178,7 +1210,7 @@ th:last-child {
 .modal-heading p {
   margin-top: 9px;
   line-height: 1.6;
-  font-size: 11px;
+  font-size: 0.9375rem;
   color: var(--muted);
 }
 .modal-heading .icon-button {
@@ -1194,20 +1226,20 @@ th:last-child {
 }
 .settings-balance > span {
   display: block;
-  font-size: 10px;
+  font-size: 0.875rem;
   color: #96a797;
   margin-bottom: 11px;
 }
 .settings-balance strong {
-  font: 22px var(--mono);
+  font: 1.625rem var(--mono);
 }
 .settings-balance small {
-  font-size: 10px;
+  font-size: 0.875rem;
   color: #84968b;
 }
 .settings-balance p {
   color: #6d8880;
-  font-size: 10px;
+  font-size: 0.875rem;
   margin-top: 10px;
   line-height: 1.7;
 }
@@ -1215,13 +1247,13 @@ th:last-child {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
-  font-size: 11px;
+  font-size: 0.9375rem;
   gap: 10px;
   color: #c2cfcf;
   margin-bottom: 15px;
 }
 .field-label > span {
-  font-size: 10px;
+  font-size: 0.875rem;
   color: #6e8790;
 }
 .field-label input,
@@ -1232,13 +1264,13 @@ th:last-child {
   font-family: var(--mono);
 }
 .input-help {
-  font-size: 10px;
+  font-size: 0.875rem;
   color: #779099;
   line-height: 1.8;
   margin: -3px 0 23px;
 }
 .modal-note {
-  font-size: 9px;
+  font-size: 0.8125rem;
   color: #718b94;
   line-height: 1.6;
   text-align: center;
@@ -1268,7 +1300,7 @@ th:last-child {
 }
 .history-list small {
   color: #7e959e;
-  font-size: 10px;
+  font-size: 0.875rem;
 }
 .history-list strong {
   font-weight: 400;
@@ -1288,7 +1320,7 @@ th:last-child {
   font-weight: 400;
 }
 .history-empty p {
-  font-size: 12px;
+  font-size: 1rem;
 }
 .summary-top {
   display: flex;
@@ -1299,13 +1331,13 @@ th:last-child {
 }
 .summary-top > div > span {
   display: block;
-  font-size: 9px;
+  font-size: 0.8125rem;
   font-family: var(--mono);
   color: #7d959d;
   letter-spacing: 1px;
 }
 .summary-top h3 {
-  font: 35px var(--mono);
+  font: 2.5rem var(--mono);
   margin-top: 10px;
   letter-spacing: -1px;
 }
@@ -1316,12 +1348,12 @@ th:last-child {
   gap: 10px;
 }
 .summary-top strong {
-  font: 24px var(--mono);
+  font: 1.875rem var(--mono);
   font-weight: 400;
 }
 .summary-top > div:last-child span {
   color: inherit;
-  font-size: 11px;
+  font-size: 0.9375rem;
   letter-spacing: 0;
 }
 .summary-metrics {
@@ -1336,7 +1368,7 @@ th:last-child {
   gap: 8px;
 }
 .summary-metrics .detail > strong {
-  font-size: 16px;
+  font-size: 1.1875rem;
 }
 .equity-chart {
   padding: 17px 15px;
@@ -1346,7 +1378,7 @@ th:last-child {
   margin-bottom: 20px;
 }
 .equity-chart > span {
-  font-size: 9px;
+  font-size: 0.8125rem;
   letter-spacing: 1px;
   color: #7f9a9f;
 }
@@ -1357,7 +1389,7 @@ th:last-child {
 .equity-chart > div {
   display: flex;
   justify-content: space-between;
-  font: 8px var(--mono);
+  font: 0.75rem var(--mono);
   color: #78928b;
 }
 .summary-table {
@@ -1367,7 +1399,7 @@ th:last-child {
   margin-bottom: 18px;
 }
 .summary-trades summary {
-  font-size: 11px;
+  font-size: 0.9375rem;
   color: #a4b7b5;
   cursor: pointer;
   margin-bottom: 15px;
@@ -1379,17 +1411,17 @@ th:last-child {
   margin-bottom: 25px;
 }
 .rules-grid article > span {
-  font: 11px var(--mono);
+  font: 0.9375rem var(--mono);
   color: var(--accent);
 }
 .rules-grid h3 {
-  font-size: 16px;
+  font-size: 1.1875rem;
   font-weight: 400;
   margin: 10px 0;
 }
 .rules-grid p,
 .execution-rules p {
-  font-size: 11px;
+  font-size: 0.9375rem;
   line-height: 1.9;
   color: #8da3a8;
 }
@@ -1400,7 +1432,7 @@ th:last-child {
   border-radius: 6px;
 }
 .execution-rules h3 {
-  font-size: 12px;
+  font-size: 1rem;
   font-weight: 500;
   margin-bottom: 12px;
 }
@@ -1423,7 +1455,7 @@ th:last-child {
   z-index: 80;
   max-width: 90vw;
   color: #c8d9bd;
-  font-size: 12px;
+  font-size: 1rem;
 }
 .toast span {
   line-height: 1.5;
@@ -1441,7 +1473,7 @@ th:last-child {
   color: #eba5a5;
   padding: 10px 13px;
   margin: 0 0 18px;
-  font-size: 12px;
+  font-size: 1rem;
   line-height: 1.7;
 }
 .error-banner > svg {
@@ -1461,7 +1493,7 @@ th:last-child {
   justify-content: center;
   gap: 12px;
   color: #c7dbad;
-  font-size: 12px;
+  font-size: 1rem;
 }
 .spinner {
   width: 15px;
@@ -1489,7 +1521,7 @@ th:last-child {
     padding: 0 48px;
   }
   .workspace {
-    grid-template-columns: minmax(0, 1fr) 340px;
+    grid-template-columns: minmax(0, 1fr) 26rem;
   }
   .chart-surface,
   .empty-chart,
@@ -1497,7 +1529,7 @@ th:last-child {
     height: 610px;
   }
   .metric strong {
-    font-size: 27px;
+    font-size: 2rem;
   }
   .metric {
     padding: 0 30px;
@@ -1514,13 +1546,13 @@ th:last-child {
     padding: 0 16px;
   }
   .metric strong {
-    font-size: 20px;
+    font-size: 1.5rem;
   }
   .metric small {
-    font-size: 9px;
+    font-size: 0.8125rem;
   }
   .workspace {
-    grid-template-columns: minmax(0, 1fr) 288px;
+    grid-template-columns: minmax(0, 1fr) 22rem;
     gap: 13px;
   }
   .chart-heading {
@@ -1564,7 +1596,7 @@ th:last-child {
     gap: 7px;
   }
   .protection-inputs .price-input small {
-    font-size: 7px;
+    font-size: 0.75rem;
   }
   .pending-row {
     gap: 12px;
@@ -1620,13 +1652,13 @@ th:last-child {
     justify-content: flex-end;
   }
   .game-progress > div:first-child strong {
-    font-size: 11px;
+    font-size: 0.9375rem;
   }
   h1 {
-    font-size: 24px;
+    font-size: 1.875rem;
   }
   .eyebrow {
-    font-size: 8px;
+    font-size: 0.75rem;
   }
   .chart-surface,
   .empty-chart,
@@ -1640,14 +1672,14 @@ th:last-child {
     display: block;
   }
   .repick {
-    font-size: 10px;
+    font-size: 0.875rem;
     gap: 5px;
   }
   .header-actions {
     gap: 10px;
   }
   .activity-heading > .muted {
-    font-size: 9px;
+    font-size: 0.8125rem;
   }
 }
 @media (max-width: 540px) {
@@ -1659,11 +1691,11 @@ th:last-child {
     gap: 10px;
   }
   .brand {
-    font-size: 21px;
+    font-size: 1.5rem;
     gap: 9px;
   }
   .brand small {
-    font-size: 7px;
+    font-size: 0.75rem;
   }
   .header-actions {
     gap: 4px;
@@ -1694,15 +1726,15 @@ th:last-child {
     gap: 8px;
   }
   .metric strong {
-    font-size: 17px;
+    font-size: 1.25rem;
     letter-spacing: -0.8px;
   }
   .metric small {
-    font-size: 8px;
+    font-size: 0.75rem;
     line-height: 1.5;
   }
   .metric > span {
-    font-size: 9px;
+    font-size: 0.8125rem;
   }
   .metrics-strip {
     margin-bottom: 16px;
@@ -1721,17 +1753,17 @@ th:last-child {
     gap: 8px;
   }
   .instrument small {
-    font-size: 7px;
+    font-size: 0.75rem;
   }
   .blind-badge {
-    font-size: 8px;
+    font-size: 0.75rem;
     padding: 5px;
   }
   .blind-badge svg {
     width: 12px;
   }
   .ohlc-bar {
-    font-size: 8px;
+    font-size: 0.75rem;
     gap: 10px;
     padding: 0 10px;
   }
@@ -1747,24 +1779,24 @@ th:last-child {
     height: 395px;
   }
   .empty-chart h2 {
-    font-size: 21px;
+    font-size: 1.5rem;
   }
   .empty-chart p {
-    font-size: 11px;
+    font-size: 0.9375rem;
   }
   .empty-illustration {
     width: 160px;
     margin-bottom: 12px;
   }
   .empty-notes {
-    font-size: 8px;
+    font-size: 0.75rem;
     gap: 9px;
   }
   .empty-notes span + span:before {
     margin-right: 9px;
   }
   .chart-watermark {
-    font-size: 20px;
+    font-size: 1.5rem;
     letter-spacing: 5px;
   }
   .replay-toolbar {
@@ -1781,7 +1813,7 @@ th:last-child {
   }
   .playback-buttons select {
     padding: 5px 2px;
-    font-size: 9px;
+    font-size: 0.8125rem;
     width: 70px;
   }
   .repick {
@@ -1791,7 +1823,7 @@ th:last-child {
   .turn-buttons .primary-button,
   .finish-button {
     padding: 8px;
-    font-size: 9px;
+    font-size: 0.8125rem;
     gap: 5px;
   }
   .finish-button svg {
@@ -1799,7 +1831,7 @@ th:last-child {
   }
   .chart-footer {
     padding: 10px;
-    font-size: 8px;
+    font-size: 0.75rem;
   }
   .chart-footer > span:last-child {
     display: none;
@@ -1810,24 +1842,24 @@ th:last-child {
     flex-wrap: wrap;
   }
   .activity-heading h2 {
-    font-size: 11px;
+    font-size: 0.9375rem;
   }
   .activity-heading > .muted {
-    font-size: 8px;
+    font-size: 0.75rem;
   }
   .activity-empty {
-    font-size: 10px;
+    font-size: 0.875rem;
     padding: 10px;
   }
   .app-footer {
-    font-size: 8px;
+    font-size: 0.75rem;
     gap: 12px;
   }
   .app-footer > span {
     max-width: 60%;
   }
   .footer-logo {
-    font-size: 16px;
+    font-size: 1.1875rem;
   }
   .modal-backdrop {
     padding: 12px;
@@ -1837,45 +1869,45 @@ th:last-child {
     border-radius: 8px;
   }
   .modal-heading h2 {
-    font-size: 21px;
+    font-size: 1.5rem;
   }
   .rules-grid {
     gap: 22px 15px;
   }
   .rules-grid h3 {
-    font-size: 14px;
+    font-size: 1.125rem;
   }
   .rules-grid p,
   .execution-rules p {
-    font-size: 10px;
+    font-size: 0.875rem;
   }
   .summary-top h3 {
-    font-size: 28px;
+    font-size: 2.125rem;
   }
   .summary-top strong {
-    font-size: 20px;
+    font-size: 1.5rem;
   }
   .summary-metrics {
     gap: 18px 10px;
   }
   .summary-metrics .detail > span {
-    font-size: 8px;
+    font-size: 0.75rem;
   }
   .summary-metrics .detail > strong {
-    font-size: 14px;
+    font-size: 1.125rem;
   }
   .pending-row {
     padding: 12px;
-    font-size: 9px;
+    font-size: 0.8125rem;
     gap: 9px;
   }
   .toast {
-    font-size: 11px;
+    font-size: 0.9375rem;
     bottom: 16px;
     min-width: 280px;
   }
   .history-list strong {
-    font-size: 11px;
+    font-size: 0.9375rem;
     gap: 8px;
   }
   .history-list > button {
@@ -1907,5 +1939,104 @@ th:last-child {
   display: flex;
   align-items: center;
   gap: 8px;
-  font: 10px var(--mono);
+  font: 0.875rem var(--mono);
+}
+
+/* Readable controls at native browser zoom; rem typography follows Display size. */
+body {
+  line-height: 1.5;
+}
+button,
+select {
+  min-height: 36px;
+}
+.icon-button {
+  width: 38px;
+  height: 38px;
+}
+.play-button,
+.next-button,
+.finish-button,
+.playback-buttons select {
+  height: 40px;
+}
+.header-actions .history-button {
+  height: 40px;
+}
+.price-input > div {
+  height: 42px;
+}
+.order-tabs button {
+  min-height: 38px;
+}
+.side-toggle button {
+  min-height: 40px;
+}
+.leverage-row button,
+.close-fractions button {
+  min-height: 32px;
+}
+.price-input > span {
+  flex-wrap: wrap;
+}
+.price-input small {
+  font-size: 0.75rem;
+}
+.chart-line-target {
+  min-height: 18px;
+}
+.bitcoin.hidden-symbol {
+  background: #c5db8814;
+  color: var(--accent);
+}
+.chart-footer {
+  flex-wrap: wrap;
+}
+.replay-toolbar {
+  flex-wrap: wrap;
+}
+@media (min-width: 1550px) {
+  .chart-surface,
+  .empty-chart,
+  .chart-loading {
+    height: clamp(610px, 50vh, 900px);
+  }
+}
+@media (max-width: 1150px) {
+  .ohlc-bar {
+    gap: 9px;
+  }
+  .playback-buttons {
+    flex-wrap: wrap;
+  }
+  .chart-footer > span:last-child {
+    display: none;
+  }
+}
+@media (max-width: 540px) {
+  .instrument strong {
+    font-size: 1rem;
+  }
+  .instrument small {
+    font-size: 0.625rem;
+  }
+  .blind-badge {
+    font-size: 0.6875rem;
+  }
+  .ohlc-bar {
+    gap: 7px;
+    font-size: 0.6875rem;
+  }
+  .protection-inputs {
+    gap: 12px;
+  }
+  .protection-inputs .price-input > span {
+    font-size: 0.8125rem;
+  }
+  .playback-buttons select {
+    width: auto;
+  }
+  .activity-heading > .muted {
+    font-size: 0.75rem;
+  }
 }

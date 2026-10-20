@@ -1,6 +1,16 @@
 import { INTERVALS, type Interval } from "./market";
 import type { Game, Trade, Turn } from "./engine";
-export type Settings = { risk: number; interval: Interval };
+export const DISPLAY_SIZES = {
+  comfortable: 1,
+  large: 1.15,
+  "extra-large": 1.3,
+} as const;
+export type DisplaySize = keyof typeof DISPLAY_SIZES;
+export type Settings = {
+  risk: number;
+  interval: Interval;
+  displaySize: DisplaySize;
+};
 export type Summary = {
   id: string;
   date: string;
@@ -11,17 +21,29 @@ export type Summary = {
   turns: Turn[];
   trades: Trade[];
 };
-export const defaults: Settings = { risk: 1, interval: "5m" };
+export const defaults: Settings = {
+  risk: 1,
+  interval: "5m",
+  displaySize: "comfortable",
+};
 export function loadSettings(): Settings {
   try {
     const s = JSON.parse(localStorage.getItem("pa-settings") ?? "null");
-    return s &&
-      Number.isFinite(s.risk) &&
-      s.risk > 0 &&
-      s.risk <= 100 &&
-      INTERVALS.includes(s.interval)
-      ? s
-      : defaults;
+    if (
+      !s ||
+      !Number.isFinite(s.risk) ||
+      s.risk <= 0 ||
+      s.risk > 100 ||
+      !INTERVALS.includes(s.interval)
+    )
+      return defaults;
+    return {
+      risk: s.risk,
+      interval: s.interval,
+      displaySize: Object.hasOwn(DISPLAY_SIZES, s.displaySize)
+        ? s.displaySize
+        : defaults.displaySize,
+    };
   } catch {
     return defaults;
   }
