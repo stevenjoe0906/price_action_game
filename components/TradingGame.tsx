@@ -2,6 +2,7 @@
 import dynamic from "next/dynamic";
 import ResizableChartPanels from "./ResizableChartPanels";
 import PositionProtection from "./PositionProtection";
+import { createReplayTimer } from "@/lib/replay-timer";
 import {
   useCallback,
   useEffect,
@@ -264,7 +265,9 @@ export default function TradingGame() {
   const [toast, setToast] = useState("");
   const [draft, setDraft] = useState<Settings>(defaults);
   const summarySaved = useRef(false);
-  const hold = useRef<ReturnType<typeof setInterval> | null>(null);
+  const hold = useRef<ReturnType<typeof createReplayTimer> | null>(null);
+  const speedRef = useRef(speed);
+  speedRef.current = speed;
   const commit = useCallback((g: Game) => {
     gameRef.current = g;
     setGame(g);
@@ -323,7 +326,7 @@ export default function TradingGame() {
   useEffect(() => {
     if (modal) {
       setPlaying(false);
-      if (hold.current) clearInterval(hold.current);
+      hold.current?.stop();
       hold.current = null;
     }
   }, [modal]);
@@ -433,20 +436,27 @@ export default function TradingGame() {
   const stepRef = useRef(step);
   stepRef.current = step;
   const stopHold = useCallback(() => {
-    if (hold.current) clearInterval(hold.current);
+    hold.current?.stop();
     hold.current = null;
   }, []);
   const beginHold = useCallback(() => {
-    if (hold.current) return;
+    if (hold.current?.running) return;
     setPlaying(false);
-    void stepRef.current();
-    hold.current = setInterval(() => void stepRef.current(), 200);
+    hold.current = createReplayTimer(
+      () => void stepRef.current(),
+      speedRef.current,
+    );
+    hold.current.start(true);
   }, []);
   useEffect(() => {
     if (!playing || game?.status !== "active") return;
-    const id = setInterval(() => void stepRef.current(), 1000 / speed);
-    return () => clearInterval(id);
+    const timer = createReplayTimer(() => void stepRef.current(), speed);
+    timer.start();
+    return timer.stop;
   }, [playing, speed, game?.status]);
+  useEffect(() => {
+    hold.current?.setSpeed(speed);
+  }, [speed]);
   useEffect(() => {
     const keydown = (e: KeyboardEvent) => {
       if (
@@ -464,7 +474,10 @@ export default function TradingGame() {
       if (gameRef.current?.status !== "active") return;
       if (e.code === "Space") {
         e.preventDefault();
-        if (!e.repeat) setPlaying((p) => !p);
+        if (!e.repeat) {
+          stopHold();
+          setPlaying((p) => !p);
+        }
       }
       if (e.key === "ArrowRight") {
         e.preventDefault();
@@ -1712,9 +1725,9 @@ export default function TradingGame() {
               <span>03</span>
               <h3>Let it unfold</h3>
               <p>
-                Play at up to 20× or hold the right arrow to advance five
-                candles per second. Each new candle executes orders before the
-                next one is shown.
+                Play or hold Next / the right arrow at the selected 1×–20×
+                speed. Each new candle executes orders before the next one is
+                shown.
               </p>
             </article>
             <article>

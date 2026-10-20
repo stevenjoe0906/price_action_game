@@ -142,6 +142,9 @@ export default function PriceChart({
       wickUpColor: "#72d7b0",
       wickDownColor: "#e98080",
       priceFormat: { type: "price", precision: 4, minMove: 0.0001 },
+      priceLineColor: CHART_THEMES[theme].currentPrice,
+      priceLineStyle: LineStyle.Dotted,
+      priceLineWidth: 1,
     });
     api.current = chart;
     series.current = s;
@@ -221,6 +224,7 @@ export default function PriceChart({
       },
     });
     series.current?.applyOptions({
+      priceLineColor: palette.currentPrice,
       upColor: palette.up,
       downColor: palette.down,
       borderUpColor: palette.up,
@@ -398,33 +402,26 @@ export default function PriceChart({
                 Number.isFinite(line.price) &&
                 line.price > 0,
             )
-            .map((line) => {
-              const y = series.current?.priceToCoordinate(line.price);
-              if (
-                y == null ||
-                y < 12 ||
-                y > (api.current?.paneSize().height ?? 0) - 12
-              )
-                return null;
-              return (
-                <ChartLineControls
-                  key={`controls-${line.id}`}
-                  line={line}
-                  style={{
-                    top: y,
-                    right: (api.current?.priceScale("right").width() ?? 80) + 8,
-                  }}
-                  onCancel={() => {
-                    drag.current?.end(true);
-                    onCancelLine(line.id);
-                  }}
-                  onAdd={(kind) => {
-                    drag.current?.end(true);
-                    onAddProtection(kind);
-                  }}
-                />
-              );
-            })}
+            .map((line) => (
+              <ChartLineControls
+                key={`controls-${line.id}`}
+                line={line}
+                preview={dragging}
+                toCoordinate={(price) =>
+                  series.current?.priceToCoordinate(price)
+                }
+                paneHeight={api.current?.paneSize().height ?? 0}
+                axisWidth={api.current?.priceScale("right").width() ?? 80}
+                onCancel={() => {
+                  drag.current?.end(true);
+                  onCancelLine(line.id);
+                }}
+                onAdd={(kind) => {
+                  drag.current?.end(true);
+                  onAddProtection(kind);
+                }}
+              />
+            ))}
         {fills.slice(-100).map((f, i) => {
           const x = api.current
             ?.timeScale()

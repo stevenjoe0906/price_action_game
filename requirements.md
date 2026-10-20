@@ -29,7 +29,7 @@ This specification incorporates the decisions agreed on October 20, 2026. The im
 
 - Play/pause, default one candle per second.
 - Speeds: **1x, 2x, 5x, 10x, 20x**.
-- Next reveals one candle; holding Next or Right Arrow advances five candles per second. Releasing stops it.
+- Next reveals one candle immediately; holding Next or Right Arrow repeats at the selected replay speed, matching Play (1× = one candle per second). Releasing stops it.
 - Space toggles playback; controls do not interfere with typing in inputs.
 - Show draggable entry, SL, and optional TP lines after Start Trading. Support dragging anywhere along the line, with live line, price-axis label, and input updates. Pause replay while dragging, validate protection on release, and let Escape cancel.
 - Permit zooming and panning. Future candles must not affect the visible chart or its price scale.
@@ -99,3 +99,5 @@ This specification incorporates the decisions agreed on October 20, 2026. The im
 - Position SL/TP each cover the full remaining position; newest same-direction fill replaces both. Allow independent cancellation from chart/sidebar, re-adding via price fields, and modification through fields or dragging. Required entry SL sizing does not prevent canceling the position SL after execution.
 
 - Missing position exits expose Add SL/Add TP in the padded sidebar and SL/TP buttons beside the average-entry chart label. Restore valid defaults from the current market without submitting a new entry; allow custom prices with inline directional validation. Chart text and action buttons must occupy separate non-overlapping slots outside the price axis.
+
+- Position SL/TP action labels must track live drag previews on every pointer move and restore on cancellation, matching the native line and price field. Use a faint neutral current-price guide, distinct from order/protection lines in both themes. Play and held Next/Right Arrow share the selected 1×–20× multiplier, including speed changes during a hold; Next still advances immediately on press.

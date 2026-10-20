@@ -11,6 +11,7 @@ export const CHART_THEMES = {
     label: "#303e45",
     accent: "#c5db88",
     neutral: "#a4b2bd",
+    currentPrice: "rgba(215, 226, 233, 0.28)",
   },
   light: {
     background: "#ffffff",
@@ -23,5 +24,6 @@ export const CHART_THEMES = {
     label: "#536774",
     accent: "#52782c",
     neutral: "#526a7a",
+    currentPrice: "rgba(80, 105, 120, 0.18)",
   },
 } as const;

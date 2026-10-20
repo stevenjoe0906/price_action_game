@@ -86,7 +86,10 @@ test("long and short positions can cancel and restore exits from chart/sidebar c
           createElement(ChartLineControls, {
             key: line.id,
             line,
-            style: { top: 100, right: 90 },
+            preview: null,
+            toCoordinate: () => 100,
+            paneHeight: 600,
+            axisWidth: 82,
             onAdd: add,
             onCancel: () => cancel(line.id === "position-sl" ? "sl" : "tp"),
           }),
