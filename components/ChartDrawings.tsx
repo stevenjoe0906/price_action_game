@@ -26,6 +26,7 @@ type Props = {
   onInteract: () => void;
   expanded: boolean;
   onExpand: () => void;
+  contextOpen?: boolean;
 };
 type Tool = "cursor" | DrawingKind;
 type Edit = {
@@ -75,6 +76,7 @@ export default function ChartDrawings({
   onInteract,
   expanded,
   onExpand,
+  contextOpen = false,
 }: Props) {
   const [history, dispatch] = useReducer(drawingHistory, emptyDrawings);
   const [tool, setTool] = useState<Tool>("cursor");
@@ -116,6 +118,12 @@ export default function ChartDrawings({
     down.current = null;
     setTool("cursor");
   };
+  useEffect(() => {
+    if (contextOpen) {
+      cancel();
+      setSelected(null);
+    }
+  }, [contextOpen]);
   const choose = (value: Tool) => {
     cancel();
     setTool(value);

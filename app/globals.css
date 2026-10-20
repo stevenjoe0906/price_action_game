@@ -264,13 +264,7 @@ kbd {
   padding: 2px 5px;
   border-radius: 3px;
 }
-.game-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 31px 0 26px;
-  gap: 20px;
-}
+
 .eyebrow {
   font-family: var(--mono);
   color: var(--accent);
@@ -1611,10 +1605,6 @@ th:last-child {
   .metric:nth-child(-n + 3) {
     border-bottom: 1px solid var(--border);
   }
-  .game-heading {
-    padding: 25px 0;
-    align-items: flex-start;
-  }
 
   h1 {
     font-size: 1.875rem;
@@ -1668,10 +1658,6 @@ th:last-child {
   }
   .history-button {
     padding: 0 8px;
-  }
-  .game-heading {
-    display: block;
-    padding: 24px 0 20px;
   }
 
   .metric {
@@ -2252,10 +2238,7 @@ select {
   padding: 8px 0;
   flex-shrink: 0;
 }
-.game-heading {
-  flex-shrink: 0;
-  padding: 12px 0;
-}
+
 .metrics-strip,
 .has-session .metrics-strip {
   flex-shrink: 0;
@@ -2537,4 +2520,75 @@ select {
   .metrics-strip .metric:nth-child(2n) {
     border-right: 0;
   }
+}
+
+.chart-order-menu {
+  position: absolute;
+  width: min(28rem, calc(100% - 16px));
+  max-height: calc(100% - 16px);
+  overflow: auto;
+  z-index: 12;
+  padding: 6px;
+  border: 1px solid var(--border-strong);
+  border-radius: 7px;
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: 0 10px 35px #0005;
+}
+.chart-order-menu-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px 10px;
+  font-size: 0.8125rem;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+}
+.chart-order-menu-heading > span {
+  font-family: var(--mono);
+  color: var(--text-secondary);
+}
+.chart-order-menu > button {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px;
+  gap: 12px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-secondary);
+  white-space: normal;
+  text-align: left;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+.chart-order-menu > button:hover,
+.chart-order-menu > button:focus-visible {
+  background: var(--panel-raised);
+  filter: none;
+}
+.chart-order-menu > button > span:first-child {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+.chart-order-menu > button strong {
+  color: var(--text);
+  font-weight: 500;
+}
+.chart-order-menu > p {
+  border-top: 1px solid var(--border);
+  padding: 9px 10px 4px;
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+.order-tabs {
+  gap: 12px;
+  justify-content: space-between;
+}
+.order-tabs button {
+  font-size: 0.8125rem;
 }

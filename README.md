@@ -57,11 +57,11 @@ The build downloads the public history and exports the site. The final container
 ## Game rules
 
 - A new game starts with **10,000 USDT**. Balance carries across **20 turns**. Liquidation ends the game immediately. There is no manual End Game button.
-- Each turn randomly selects a historical start at or after January 1, 2022. It shows **500–1,500 initial candles**, repicking when history is insufficient. The initial final close is normalized to **100** using one fixed OHLC multiplier throughout the turn. Calendar dates are hidden. The market symbol and Bitcoin icon are hidden during active turns and revealed after the turn ends.
+- Each turn randomly selects a historical start at or after January 1, 2022. It shows **500–1,500 initial candles**, repicking when history is insufficient. The initial final close is normalized to **100** using one fixed OHLC multiplier throughout the turn. Calendar dates are hidden. The market symbol and Bitcoin icon are hidden before a game starts and during active turns, and revealed only after a turn ends. The separate introductory slogan area is removed.
 - Replay has **no fixed candle limit**. Play at 1×, 2×, 5×, 10×, or 20×; one candle per second at 1×. **Space** toggles playback; **Right Arrow** steps or advances at five candles per second while held. The Next button supports holding too. Playback pauses in a hidden tab.
 - **Finish turn** cancels every pending order and closes the open position at the **last visible close**, with market slippage and fees. It reveals no further candles. Reaching the latest closed API candle or the end of the installed archive pack automatically finishes the turn. Data gaps and connection errors pause playback instead of fabricating prices.
 - **Repick** changes the chart without consuming a turn, until an order is successfully submitted. Canceling that order does not unlock Repick.
-- Market, limit, and stop-market entries support long and short directions; leverage is 2×, 3×, 5×, or 10×. **SL is required**, TP is optional. SL may later be moved farther away, increasing the original risk, but cannot be removed.
+- Market, limit, stop-market, and stop-limit entries support long and short directions; leverage is 2×, 3×, 5×, or 10×. **SL is required**, TP is optional. SL may later be moved farther away, increasing the original risk, but cannot be removed.
 - Quantity is **balance × risk percentage ÷ entry-to-SL distance**. Market entries use the slipped entry; pending quantities are fixed at submission. Fees and slippage are additional to the risk budget. Insufficient-margin orders are rejected, including at fill time. Pending orders conservatively reserve margin.
 - There is one net position. Opposite fills reduce it; excess quantity reverses it. Same-direction fills use a weighted average entry and apply the latest order's SL, TP, and leverage to the entire combined position. Position size is not manually editable.
 - Close 25%, 50%, 75%, or 100% of the **remaining** position. Grab anywhere along an entry/SL/TP line to drag it. The line, axis price, and form field update live. Dragging pauses playback; position protection is validated and committed on release. Escape cancels a drag. Focus a line and use Up/Down (Shift for larger steps) for keyboard adjustments. Chart lines and price fields allow protection updates.
@@ -84,6 +84,14 @@ The terminal uses the full browser width with no maximum page-width cap. Turn co
 Use the header’s **Light / Dark** switch or **Settings → Appearance** to change the interface, chart background, grids, candles, price labels, and annotations. Your appearance preference is saved locally and changing it does not reset the game. The page footer is removed; the read-only simulated-execution/slippage/funding note is in Settings. TradingView attribution remains visible in the chart status bar.
 
 The default UI uses larger text, wider trading panels, and 14-pixel chart labels. In **Settings → Display size**, choose Comfortable, Large (+15%), or Extra large (+30%). This scales UI typography, panel widths, and chart labels together without requiring browser zoom. Existing saved risk/interval settings are retained when upgrading.
+
+## Right-click order preparation
+
+During an active turn, right-click a chart price level to open three actions. Above the current price: Sell Limit, Buy Stop Market, Buy Stop Limit. Below it: Buy Limit, Sell Stop Market, Sell Stop Limit. At the current price, only the limit action is available. The menu uses the pointer’s actual chart-price coordinate, hides the asset symbol, pauses replay, and cancels unfinished drawing gestures. It stays within the chart bounds and supports arrow-key navigation, Escape, and outside-click dismissal.
+
+Choosing an action **only opens/prefills the ticket**; it never submits an order or locks Repick. Entry/trigger is the clicked level, SL defaults to 0.5% away, and TP to 1% away in the selected direction. Risk sizing remains automatic. Stop-limit orders include an editable limit field, defaulting one normalized tick (0.0001) beyond the trigger in the order direction; moving the trigger preserves that spread. Review the ticket and explicitly place it.
+
+Stop-limit orders first activate at the stop trigger, then behave as limit orders. A continuous intrabar trigger fills at the trigger price under the candle model. A gap beyond the limit activates the order but cannot fill it at a worse price; it stays pending until the limit is reached or improved. Limit fills do not receive market slippage. Sizing and margin reservation use the limit price. Pending triggered orders are labeled in activity and cancel normally, including at turn end.
 
 ## Chart drawing toolbar
 

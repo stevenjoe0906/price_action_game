@@ -269,3 +269,106 @@ test("equity reflects unrealized loss and fees", () => {
   const g = open();
   approx(equity(g, 99), g.balance + (99 - g.position!.entry) * g.position!.qty);
 });
+
+test("stop-limit stays dormant until the trigger and fills without market slippage", () => {
+  const g = submitOrder(createGame(100, 1), {
+    ...order,
+    type: "stop-limit",
+    entry: 101,
+    limit: 101.1,
+    sl: 98,
+    tp: null,
+  });
+  const waiting = advance(g, candle({ high: 100.9 }));
+  assert.equal(waiting.position, null);
+  assert.equal(waiting.orders[0].triggered, false);
+  const filled = advance(
+    waiting,
+    candle({ time: 3, open: 100.5, high: 102, low: 100, close: 101.5 }),
+  );
+  approx(filled.position!.entry, 101);
+  assert.equal(filled.orders.length, 0);
+  approx(filled.fees, filled.position!.qty * 101 * FEE);
+});
+test("gapping beyond a stop-limit activates it without violating its limit price", () => {
+  const g = submitOrder(createGame(100, 1), {
+    ...order,
+    type: "stop-limit",
+    entry: 101,
+    limit: 101.1,
+    sl: 98,
+    tp: null,
+  });
+  const gap = advance(
+    g,
+    candle({ open: 103, high: 104, low: 102, close: 103 }),
+  );
+  assert.equal(gap.position, null);
+  assert.equal(gap.orders[0].triggered, true);
+  assert.equal(gap.fees, 0);
+  const filled = advance(
+    gap,
+    candle({ time: 3, open: 102, high: 103, low: 101, close: 101.5 }),
+  );
+  approx(filled.position!.entry, 101.1);
+});
+test("triggered sell stop-limit survives a gap and fills only at its limit or better", () => {
+  const g = submitOrder(createGame(100, 1), {
+    ...order,
+    side: "short",
+    type: "stop-limit",
+    entry: 99,
+    limit: 98.9,
+    sl: 102,
+    tp: null,
+  });
+  const gap = advance(g, candle({ open: 97, high: 98, low: 96, close: 97 }));
+  assert.equal(gap.position, null);
+  assert.equal(gap.orders[0].triggered, true);
+  const filled = advance(
+    gap,
+    candle({ time: 3, open: 98, high: 99, low: 97, close: 98.5 }),
+  );
+  approx(filled.position!.entry, 98.9);
+});
+test("stop-limit bracket still observes stop-loss-first on its fill candle", () => {
+  const g = submitOrder(createGame(100, 1), {
+    ...order,
+    type: "stop-limit",
+    entry: 101,
+    limit: 101.1,
+    sl: 99,
+    tp: 103,
+  });
+  const filled = advance(g, candle({ low: 98, high: 104, close: 102 }));
+  assert.equal(filled.trades[0].reason, "Stop loss");
+});
+test("invalid stop-limit prices are rejected and pending triggered orders cancel at turn end", () => {
+  for (const limit of [undefined, NaN, 0, 100])
+    assert.throws(() =>
+      submitOrder(createGame(100, 1), {
+        ...order,
+        type: "stop-limit",
+        entry: 101,
+        limit,
+        sl: 98,
+        tp: null,
+      }),
+    );
+  const g = submitOrder(createGame(100, 1), {
+    ...order,
+    type: "stop-limit",
+    entry: 101,
+    limit: 101.1,
+    sl: 98,
+    tp: null,
+  });
+  const gap = advance(
+    g,
+    candle({ open: 103, low: 102, high: 104, close: 103 }),
+  );
+  const ended = finishTurn(gap);
+  assert.equal(ended.orders.length, 0);
+  assert.equal(ended.fees, 0);
+  assert.equal(ended.balance, 10000);
+});

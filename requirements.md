@@ -18,7 +18,7 @@ This specification incorporates the decisions agreed on October 20, 2026. The im
 - Initially show no chart; provide Start New Game.
 - Each turn chooses a random historical start at or after **2022-01-01 00:00 UTC**, before the latest available fully closed candle.
 - Load up to **1,500 initial candles**. If fewer than **500** are available, repick.
-- Normalize every OHLC value by one fixed multiplier so the last initial close is **100**. Use the same scale throughout that turn. Hide calendar dates to support blind practice. Hide the market symbol and asset icon during active turns; reveal them when the turn ends.
+- Normalize every OHLC value by one fixed multiplier so the last initial close is **100**. Use the same scale throughout that turn. Hide calendar dates to support blind practice. Hide the market symbol and asset icon before the game starts and during active turns; reveal them only when the turn ends. Remove the separate introductory slogan area.
 - There is **no fixed future-candle limit**. Do not reveal future candles after a turn ends.
 - **Finish Turn** cancels every pending order, including stop entries, and closes the position at the last displayed close, with applicable slippage and fees. No future candle is used.
 - Reaching the latest closed API candle or the end of the installed historical pack automatically finishes the turn.
@@ -34,6 +34,13 @@ This specification incorporates the decisions agreed on October 20, 2026. The im
 - Show draggable entry, SL, and optional TP lines after Start Trading. Support dragging anywhere along the line, with live line, price-axis label, and input updates. Pause replay while dragging, validate protection on release, and let Escape cancel.
 - Permit zooming and panning. Future candles must not affect the visible chart or its price scale.
 
+## Chart context menu
+
+- Right-click during an active turn to prepare orders at the clicked chart-price level. Above market: sell limit, buy stop-market, buy stop-limit. Below market: buy limit, sell stop-market, sell stop-limit.
+- Selecting an item opens the ticket and sets direction, order type, entry/trigger, SL, TP, and a stop-limit limit when applicable. Do not submit an order automatically. Use the same 0.5% SL / 1% TP default distances as Start Trading, with risk-based size.
+- Stop-limit orders activate on trigger and then fill only at their limit or better. Gap triggers can remain unfilled. Size/reserve margin from the limit, expose the limit field, and show triggered status in pending orders.
+- Hide the symbol in the menu, pause replay, dismiss with Escape/outside click, and keep the menu inside chart bounds.
+
 ## Drawing toolbar
 
 - Provide a free custom toolbar on the chart: select, trendline, ray, horizontal/vertical lines, rectangle, and a percentage/price-change ruler.
@@ -44,7 +51,7 @@ This specification incorporates the decisions agreed on October 20, 2026. The im
 
 ## Orders, risk, and position management
 
-- Market, limit, and stop-market orders; long and short directions.
+- Market, limit, stop-market, and stop-limit orders; long and short directions.
 - **SL is required** for every entry and cannot be removed from an open position. TP is optional.
 - Calculate quantity automatically: **account balance x risk percentage / absolute entry-to-SL distance**. Do not include fees or slippage in the risk budget; market sizing uses the executable slipped entry.
 - Users cannot directly edit quantity. Default risk **1%**, adjustable in settings.

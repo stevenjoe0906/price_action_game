@@ -3,7 +3,7 @@ export const SLIPPAGE = 0.0001;
 export const MAINTENANCE = 0.005;
 export const INITIAL_BALANCE = 10_000;
 export type Side = "long" | "short";
-export type OrderType = "market" | "limit" | "stop";
+export type OrderType = "market" | "limit" | "stop" | "stop-limit";
 export type Candle = {
   time: number;
   open: number;
@@ -16,6 +16,8 @@ export type Order = {
   side: Side;
   type: OrderType;
   entry: number;
+  limit?: number;
+  triggered?: boolean;
   sl: number;
   tp: number | null;
   qty: number;
@@ -87,6 +89,7 @@ export type OrderInput = {
   side: Side;
   type: OrderType;
   entry: number;
+  limit?: number;
   sl: number;
   tp: number | null;
   leverage: number;
@@ -102,6 +105,9 @@ export const equity = (g: Game, price = g.last) =>
   g.balance + unrealized(g, price);
 export const margin = (g: Game) =>
   g.position ? (g.position.qty * g.position.entry) / g.position.leverage : 0;
+export const orderNotionalPrice = (
+  order: Pick<Order, "type" | "entry" | "limit">,
+) => (order.type === "stop-limit" ? order.limit! : order.entry);
 export const slip = (price: number, side: Side) =>
   price * (1 + direction(side) * SLIPPAGE);
 export function createGame(last: number, time: number): Game {
@@ -200,7 +206,8 @@ function execute(g: Game, o: Order, price: number): boolean {
     const reserved = candidate.orders
       .filter((order) => order.id !== o.id)
       .reduce(
-        (sum, order) => sum + (order.qty * order.entry) / order.leverage,
+        (sum, order) =>
+          sum + (order.qty * orderNotionalPrice(order)) / order.leverage,
         0,
       );
     if (
@@ -235,6 +242,16 @@ export function submitOrder(original: Game, input: OrderInput): Game {
   const entry =
     input.type === "market" ? slip(g.last, input.side) : input.entry;
   if (
+    input.type === "stop-limit" &&
+    (!Number.isFinite(input.limit) ||
+      input.limit! <= 0 ||
+      (input.side === "long" ? input.limit! < entry : input.limit! > entry))
+  )
+    throw new Error(
+      "A stop-limit buy needs a limit at or above its trigger; a sell needs a limit at or below it.",
+    );
+  const sizingEntry = input.type === "stop-limit" ? input.limit! : entry;
+  if (
     ![entry, input.sl, input.risk, input.leverage].every(Number.isFinite) ||
     entry <= 0 ||
     input.sl <= 0 ||
@@ -243,7 +260,7 @@ export function submitOrder(original: Game, input: OrderInput): Game {
     ![2, 3, 5, 10].includes(input.leverage)
   )
     throw new Error("Enter valid prices, leverage, and risk (0–100%).");
-  if (input.side === "long" ? input.sl >= entry : input.sl <= entry)
+  if (input.side === "long" ? input.sl >= sizingEntry : input.sl <= sizingEntry)
     throw new Error(
       "Stop loss must be below a long entry or above a short entry.",
     );
@@ -251,7 +268,9 @@ export function submitOrder(original: Game, input: OrderInput): Game {
     input.tp !== null &&
     (!Number.isFinite(input.tp) ||
       input.tp <= 0 ||
-      (input.side === "long" ? input.tp <= entry : input.tp >= entry))
+      (input.side === "long"
+        ? input.tp <= sizingEntry
+        : input.tp >= sizingEntry))
   )
     throw new Error(
       "Take profit must be above a long entry or below a short entry.",
@@ -260,26 +279,27 @@ export function submitOrder(original: Game, input: OrderInput): Game {
     const correctSide =
       input.type === "limit"
         ? input.side === "long"
-          ? entry < g.last
-          : entry > g.last
+          ? entry <= g.last
+          : entry >= g.last
         : input.side === "long"
           ? entry > g.last
           : entry < g.last;
     if (!correctSide)
       throw new Error(
-        "Limit buys belong below price; limit sells above. Stop buys belong above price; stop sells below.",
+        "Limit buys belong at or below price; limit sells at or above. Stop buys belong above price; stop sells below.",
       );
   }
-  const qty = (g.balance * input.risk) / 100 / Math.abs(entry - input.sl);
+  const qty = (g.balance * input.risk) / 100 / Math.abs(sizingEntry - input.sl);
   if (!Number.isFinite(qty) || qty <= 0)
     throw new Error("Insufficient balance or invalid stop distance.");
-  const o: Order = { id: g.nextId++, ...input, entry, qty };
+  const o: Order = { id: g.nextId++, ...input, entry, qty, triggered: false };
   if (input.type === "market") {
     if (!execute(g, o, entry)) throw new Error(g.notice);
   } else {
     // Reserve gross notional for pending orders; actual fills are checked again.
     const reserved = g.orders.reduce(
-      (sum, order) => sum + (order.qty * order.entry) / order.leverage,
+      (sum, order) =>
+        sum + (order.qty * orderNotionalPrice(order)) / order.leverage,
       0,
     );
     const reduction =
@@ -292,9 +312,9 @@ export function submitOrder(original: Game, input: OrderInput): Game {
     if (
       margin(g) -
         released +
-        ((o.qty - reduction) * o.entry) / o.leverage +
+        ((o.qty - reduction) * orderNotionalPrice(o)) / o.leverage +
         reserved +
-        o.qty * o.entry * FEE >
+        o.qty * orderNotionalPrice(o) * FEE >
       equity(g)
     )
       throw new Error(
@@ -366,27 +386,48 @@ export function advance(original: Game, b: Candle): Game {
   const pending = [...g.orders];
   for (const order of pending) {
     const long = order.side === "long";
-    const hit =
-      order.type === "limit"
-        ? long
-          ? b.low <= order.entry
-          : b.high >= order.entry
-        : long
-          ? b.high >= order.entry
-          : b.low <= order.entry;
-    if (!hit) continue;
+    let price: number;
+    if (order.type === "stop-limit") {
+      const triggerHit = long ? b.high >= order.entry : b.low <= order.entry;
+      if (!order.triggered && !triggerHit) continue;
+      const triggeredNow = !order.triggered;
+      g.orders = g.orders.map((o) =>
+        o.id === order.id ? { ...o, triggered: true } : o,
+      );
+      const limit = order.limit!;
+      // A continuous intrabar trigger is marketable at the trigger price. A gap
+      // beyond the limit must wait for a later retracement, never fill worse.
+      const crossedInsideBar =
+        triggeredNow && (long ? b.open < order.entry : b.open > order.entry);
+      if (crossedInsideBar) price = order.entry;
+      else {
+        const touchedLimit = long ? b.low <= limit : b.high >= limit;
+        if (!touchedLimit) continue;
+        price = long ? Math.min(b.open, limit) : Math.max(b.open, limit);
+      }
+    } else {
+      const hit =
+        order.type === "limit"
+          ? long
+            ? b.low <= order.entry
+            : b.high >= order.entry
+          : long
+            ? b.high >= order.entry
+            : b.low <= order.entry;
+      if (!hit) continue;
+      price =
+        order.type === "limit"
+          ? long
+            ? Math.min(b.open, order.entry)
+            : Math.max(b.open, order.entry)
+          : slip(
+              long
+                ? Math.max(b.open, order.entry)
+                : Math.min(b.open, order.entry),
+              order.side,
+            );
+    }
     g.orders = g.orders.filter((o) => o.id !== order.id);
-    let price =
-      order.type === "limit"
-        ? long
-          ? Math.min(b.open, order.entry)
-          : Math.max(b.open, order.entry)
-        : slip(
-            long
-              ? Math.max(b.open, order.entry)
-              : Math.min(b.open, order.entry),
-            order.side,
-          );
     const filled = execute(g, order, price);
     // Conservative OHLC model: check protection on the entry candle too, with SL first.
     if (filled) protection(g, { ...b, open: price });

@@ -48,6 +48,11 @@ import {
   type Settings,
   type Summary,
 } from "@/lib/storage";
+import {
+  orderDraft,
+  orderTypeLabel,
+  type ChartOrderType,
+} from "@/lib/order-ticket";
 import { CHART_THEMES, type Theme } from "@/lib/theme";
 import type { ChartLine } from "./PriceChart";
 const PriceChart = dynamic(() => import("./PriceChart"), {
@@ -241,6 +246,7 @@ export default function TradingGame() {
   const [side, setSide] = useState<Side>("long");
   const [orderType, setOrderType] = useState<OrderType>("market");
   const [entry, setEntry] = useState("100");
+  const [limitPrice, setLimitPrice] = useState("100.0001");
   const [sl, setSl] = useState("99.5");
   const [tp, setTp] = useState("101");
   const [leverage, setLeverage] = useState(10);
@@ -503,17 +509,46 @@ export default function TradingGame() {
   };
   const changeSide = (s: Side) => {
     setSide(s);
+    if (orderType === "stop-limit")
+      setLimitPrice((+entry + (s === "long" ? 0.0001 : -0.0001)).toFixed(6));
     const p =
       orderType === "market" ? (gameRef.current?.last ?? 100) : +entry || 100;
     setSl((p * (s === "long" ? 0.995 : 1.005)).toFixed(4));
     setTp((p * (s === "long" ? 1.01 : 0.99)).toFixed(4));
   };
   const startTicket = () => {
-    const p = gameRef.current?.last ?? 100;
     setTicket(true);
-    setEntry(p.toFixed(4));
-    setSl((p * (side === "long" ? 0.995 : 1.005)).toFixed(4));
-    setTp((p * (side === "long" ? 1.01 : 0.99)).toFixed(4));
+    changeType(orderType);
+  };
+  const prepareChartOrder = (
+    direction: Side,
+    type: ChartOrderType,
+    clicked: number,
+  ) => {
+    if (locked.current || gameRef.current?.status !== "active") return;
+    const draft = orderDraft(direction, type, clicked);
+    setPlaying(false);
+    stopHold();
+    setError("");
+    setTicket(true);
+    setSide(direction);
+    setOrderType(type);
+    setEntry(String(draft.entry));
+    setSl(String(draft.sl));
+    setTp(String(draft.tp));
+    if (draft.limit !== undefined) setLimitPrice(String(draft.limit));
+    requestAnimationFrame(() =>
+      document
+        .querySelector<HTMLInputElement>(".order-panel input:not(:disabled)")
+        ?.focus(),
+    );
+  };
+  const updateEntry = (value: string) => {
+    if (orderType === "stop-limit" && +value > 0 && +entry > 0)
+      setLimitPrice((current) =>
+        String(+(+current + +value - +entry).toFixed(6)),
+      );
+    setEntry(value);
   };
   const changeType = (type: OrderType) => {
     setOrderType(type);
@@ -530,6 +565,7 @@ export default function TradingGame() {
             ? 1.001
             : 0.999);
     setEntry(e.toFixed(4));
+    setLimitPrice((e + (side === "long" ? 0.0001 : -0.0001)).toFixed(6));
     setSl((e * (side === "long" ? 0.995 : 1.005)).toFixed(4));
     setTp((e * (side === "long" ? 1.01 : 0.99)).toFixed(4));
   };
@@ -541,6 +577,7 @@ export default function TradingGame() {
         side,
         type: orderType,
         entry: +entry,
+        limit: orderType === "stop-limit" ? +limitPrice : undefined,
         sl: +sl,
         tp: tp.trim() ? +tp : null,
         leverage,
@@ -551,14 +588,14 @@ export default function TradingGame() {
       setToast(
         orderType === "market"
           ? "Market order filled."
-          : `${orderType === "limit" ? "Limit" : "Stop market"} order placed.`,
+          : `${orderTypeLabel(orderType)} order placed.`,
       );
     } catch (e) {
       setError(e instanceof Error ? e.message : "Order rejected.");
     }
   };
   const onLinePreview = (id: string, p: number) => {
-    if (id === "draft-entry") setEntry(String(p));
+    if (id === "draft-entry") updateEntry(String(p));
     else if (id === "draft-sl") setSl(String(p));
     else if (id === "draft-tp") setTp(String(p));
     else if (id === "position-sl") setPositionSL(String(p));
@@ -621,7 +658,10 @@ export default function TradingGame() {
       result.push(
         {
           id: "draft-entry",
-          title: "ENTRY",
+          title:
+            orderType === "stop" || orderType === "stop-limit"
+              ? "TRIGGER"
+              : "ENTRY",
           price: orderType === "market" ? game.last : +entry,
           color: palette.accent,
           draggable: orderType !== "market",
@@ -661,8 +701,13 @@ export default function TradingGame() {
   const wins = closed.filter((t) => t.net > 0).length;
   const last = candles[candles.length - 1];
   const active = game?.status === "active";
+  const revealSymbol = !!game && game.status !== "active";
   const plannedEntry =
-    orderType === "market" ? slip(game?.last ?? 100, side) : +entry;
+    orderType === "market"
+      ? slip(game?.last ?? 100, side)
+      : orderType === "stop-limit"
+        ? +limitPrice
+        : +entry;
   const stopDistance = Math.abs(plannedEntry - +sl);
   const qty =
     stopDistance > 0 && Number.isFinite(stopDistance)
@@ -734,16 +779,6 @@ export default function TradingGame() {
           </button>
         </div>
       </header>
-      {!game && (
-        <section className="game-heading">
-          <div>
-            <div className="eyebrow">YOUR EDGE STARTS WITH PRACTICE</div>
-            <h1>
-              Read the chart. <span>Make your move.</span>
-            </h1>
-          </div>
-        </section>
-      )}
       <section className="metrics-strip" aria-label="Game statistics">
         <div className="metric turn-metric">
           <span>Game progress</span>
@@ -811,12 +846,14 @@ export default function TradingGame() {
           >
             <div className="chart-heading">
               <div className="instrument">
-                <span className={`bitcoin ${active ? "hidden-symbol" : ""}`}>
-                  {active ? <Icon name="shield" size={20} /> : "₿"}
+                <span
+                  className={`bitcoin ${!revealSymbol ? "hidden-symbol" : ""}`}
+                >
+                  {!revealSymbol ? <Icon name="shield" size={20} /> : "₿"}
                 </span>
                 <div>
                   <strong>
-                    {active ? (
+                    {!revealSymbol ? (
                       <>Hidden market</>
                     ) : (
                       <>
@@ -863,7 +900,7 @@ export default function TradingGame() {
                 </>
               ) : (
                 <>
-                  <span>BTCUSDT</span>
+                  <span>Awaiting chart</span>
                   <span>Free historical market data</span>
                   <span className="bar-count">No future data shown</span>
                 </>
@@ -894,6 +931,8 @@ export default function TradingGame() {
                 theme={settings.theme}
                 expanded={chartExpanded}
                 onExpand={() => setChartExpanded((v) => !v)}
+                canTrade={active && !loading}
+                onPrepareOrder={prepareChartOrder}
               />
             ) : (
               <div className="empty-chart">
@@ -932,7 +971,7 @@ export default function TradingGame() {
                 <div className="eyebrow">LESS NOISE. MORE INSTINCT.</div>
                 <h2>Your next session starts here.</h2>
                 <p>
-                  A random moment in Bitcoin’s history.
+                  A random moment in market history.
                   <br />
                   No dates. No familiar prices. Just price action.
                 </p>
@@ -1090,10 +1129,21 @@ export default function TradingGame() {
                   <span className={`position-badge ${o.side}`}>
                     {o.side.toUpperCase()}
                   </span>
-                  <strong>{o.type === "stop" ? "Stop market" : "Limit"}</strong>
+                  <strong>
+                    {orderTypeLabel(o.type)}
+                    {o.type === "stop-limit" && o.triggered
+                      ? " · Triggered"
+                      : ""}
+                  </strong>
                   <span>
-                    Entry <b>{price(o.entry)}</b>
+                    {o.type === "stop-limit" ? "Trigger" : "Entry"}{" "}
+                    <b>{price(o.entry)}</b>
                   </span>
+                  {o.type === "stop-limit" && (
+                    <span>
+                      Limit <b>{price(o.limit!)}</b>
+                    </span>
+                  )}
                   <span>
                     SL <b>{price(o.sl)}</b>
                   </span>
@@ -1197,7 +1247,9 @@ export default function TradingGame() {
                   role="tablist"
                   aria-label="Order type"
                 >
-                  {(["market", "limit", "stop"] as OrderType[]).map((t) => (
+                  {(
+                    ["market", "limit", "stop", "stop-limit"] as OrderType[]
+                  ).map((t) => (
                     <button
                       key={t}
                       role="tab"
@@ -1205,9 +1257,7 @@ export default function TradingGame() {
                       className={orderType === t ? "active" : ""}
                       onClick={() => changeType(t)}
                     >
-                      {t === "stop"
-                        ? "Stop market"
-                        : t[0].toUpperCase() + t.slice(1)}
+                      {orderTypeLabel(t)}
                     </button>
                   ))}
                 </div>
@@ -1240,12 +1290,24 @@ export default function TradingGame() {
                   </div>
                 </div>
                 <PriceInput
-                  label={orderType === "stop" ? "Trigger price" : "Entry price"}
+                  label={
+                    orderType === "stop" || orderType === "stop-limit"
+                      ? "Trigger price"
+                      : "Entry price"
+                  }
                   value={orderType === "market" ? price(game!.last) : entry}
-                  set={setEntry}
+                  set={updateEntry}
                   disabled={orderType === "market"}
                   hint={orderType === "market" ? "Market" : "Normalized"}
                 />
+                {orderType === "stop-limit" && (
+                  <PriceInput
+                    label="Limit price"
+                    value={limitPrice}
+                    set={setLimitPrice}
+                    hint="After trigger"
+                  />
+                )}
                 <div className="protection-inputs">
                   <PriceInput
                     label="Stop loss"
@@ -1616,16 +1678,16 @@ export default function TradingGame() {
               <h3>Read the context</h3>
               <p>
                 Start with 500–1,500 real{" "}
-                {active ? "market" : "BTCUSDT perpetual"} candles. Prices are
-                scaled so the initial close is 100. Dates stay hidden.
+                {revealSymbol ? "BTCUSDT perpetual" : "market"} candles. Prices
+                are scaled so the initial close is 100. Dates stay hidden.
               </p>
             </article>
             <article>
               <span>02</span>
               <h3>Define your risk</h3>
               <p>
-                Choose a market, limit, or stop-market entry. A stop loss is
-                required; take profit is optional. Size is calculated
+                Choose a market, limit, stop-market, or stop-limit entry. A stop
+                loss is required; take profit is optional. Size is calculated
                 automatically from your balance and risk.
               </p>
             </article>

@@ -12,6 +12,9 @@ import {
   type UTCTimestamp,
 } from "lightweight-charts";
 import ChartDrawings from "./ChartDrawings";
+import ChartOrderMenu from "./ChartOrderMenu";
+import type { ChartOrderType } from "@/lib/order-ticket";
+import type { Side } from "@/lib/engine";
 import { CHART_THEMES, type Theme } from "@/lib/theme";
 import type { Candle, Fill } from "@/lib/engine";
 import { createLineDrag, type LinePreview } from "@/lib/line-drag";
@@ -34,6 +37,8 @@ type Props = {
   theme: Theme;
   expanded: boolean;
   onExpand: () => void;
+  canTrade: boolean;
+  onPrepareOrder: (side: Side, type: ChartOrderType, price: number) => void;
 };
 export default function PriceChart({
   candles,
@@ -47,7 +52,14 @@ export default function PriceChart({
   theme,
   expanded,
   onExpand,
+  canTrade,
+  onPrepareOrder,
 }: Props) {
+  const [context, setContext] = useState<{
+    x: number;
+    y: number;
+    price: number;
+  } | null>(null);
   const container = useRef<HTMLDivElement>(null);
   const api = useRef<IChartApi | null>(null);
   const series = useRef<ISeriesApi<"Candlestick"> | null>(null);
@@ -281,7 +293,31 @@ export default function PriceChart({
   void revision;
   return (
     <div className="chart-workbench">
-      <div className="chart-surface">
+      <div
+        className="chart-surface"
+        onContextMenu={(event) => {
+          if (
+            !canTrade ||
+            !series.current ||
+            !api.current ||
+            !container.current ||
+            (event.target instanceof Element &&
+              event.target.closest(".drawing-toolbar"))
+          )
+            return;
+          const bounds = container.current.getBoundingClientRect();
+          const x = event.clientX - bounds.left,
+            y = event.clientY - bounds.top;
+          if (y < 0 || y > api.current.paneSize().height) return;
+          const clicked = series.current.coordinateToPrice(y);
+          if (clicked === null || !Number.isFinite(clicked) || clicked <= 0)
+            return;
+          event.preventDefault();
+          drag.current?.end(true);
+          onDragStart();
+          setContext({ x, y, price: +clicked.toFixed(6) });
+        }}
+      >
         <div ref={container} className="chart-canvas" />
         <ChartDrawings
           chart={api.current}
@@ -290,6 +326,7 @@ export default function PriceChart({
           onInteract={onDragStart}
           expanded={expanded}
           onExpand={onExpand}
+          contextOpen={canTrade && context !== null}
         />
         <div className="chart-watermark">
           PRICE ACTION<span>READ THE MARKET. TRUST YOUR PROCESS.</span>
@@ -378,6 +415,15 @@ export default function PriceChart({
             </span>
           );
         })}
+        {canTrade && context && (
+          <ChartOrderMenu
+            key={`${context.x}-${context.y}`}
+            {...context}
+            last={candles.at(-1)!.close}
+            onChoose={onPrepareOrder}
+            onClose={() => setContext(null)}
+          />
+        )}
       </div>
     </div>
   );

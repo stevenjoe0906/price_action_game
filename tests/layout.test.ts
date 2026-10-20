@@ -13,6 +13,14 @@ test("turn progress belongs to statistics and chart/activity share the left work
     assert.equal(doc.querySelectorAll(".game-progress").length, 1);
     assert.ok(doc.querySelector(".metrics-strip .game-progress"));
     assert.equal(doc.querySelector("header .game-progress"), null);
+    assert.equal(doc.querySelector(".game-heading"), null);
+    assert.ok(
+      !doc.body.textContent!.includes("YOUR EDGE STARTS WITH PRACTICE"),
+    );
+    assert.ok(!doc.body.textContent!.includes("Make your move."));
+    assert.ok(!doc.body.textContent!.includes("BTC"));
+    assert.ok(!doc.body.textContent!.includes("Bitcoin"));
+    assert.ok(!doc.body.textContent!.includes("₿"));
     const workspace = doc.querySelector(".workspace")!;
     assert.equal(workspace.children.length, 2);
     assert.ok(workspace.children[0].matches(".left-panel"));
