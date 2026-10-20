@@ -687,16 +687,6 @@ export default function TradingGame() {
             <small>TRADING LAB</small>
           </span>
         </a>
-        <div className="topbar-center">
-          {game ? (
-            <GameProgress game={game} />
-          ) : (
-            <>
-              <span className="live-dot" /> PRACTICE MODE{" "}
-              <span className="topbar-divider" /> NO REAL MONEY
-            </>
-          )}
-        </div>
         <div className="header-actions">
           <button
             className="theme-switch"
@@ -752,10 +742,14 @@ export default function TradingGame() {
               Read the chart. <span>Make your move.</span>
             </h1>
           </div>
-          <GameProgress game={game} />
         </section>
       )}
       <section className="metrics-strip" aria-label="Game statistics">
+        <div className="metric turn-metric">
+          <span>Game progress</span>
+          <GameProgress game={game} />
+          <small>20 turns per game</small>
+        </div>
         <Metric
           label="Account balance"
           value={`$${money(balance)}`}
@@ -807,258 +801,363 @@ export default function TradingGame() {
         </div>
       )}
       <div className="workspace">
-        <section
-          className={`chart-panel panel ${chartExpanded ? "is-expanded" : ""}`}
+        <div
+          className="left-panel"
+          role="region"
+          aria-label="Chart and order activity"
         >
-          <div className="chart-heading">
-            <div className="instrument">
-              <span className={`bitcoin ${active ? "hidden-symbol" : ""}`}>
-                {active ? <Icon name="shield" size={20} /> : "₿"}
-              </span>
-              <div>
-                <strong>
-                  {active ? (
-                    <>Hidden market</>
-                  ) : (
-                    <>
-                      BTC <span>/ USDT</span>
-                    </>
-                  )}
-                </strong>
-                <small>PERPETUAL · HISTORICAL REPLAY</small>
+          <section
+            className={`chart-panel panel ${chartExpanded ? "is-expanded" : ""}`}
+          >
+            <div className="chart-heading">
+              <div className="instrument">
+                <span className={`bitcoin ${active ? "hidden-symbol" : ""}`}>
+                  {active ? <Icon name="shield" size={20} /> : "₿"}
+                </span>
+                <div>
+                  <strong>
+                    {active ? (
+                      <>Hidden market</>
+                    ) : (
+                      <>
+                        BTC <span>/ USDT</span>
+                      </>
+                    )}
+                  </strong>
+                  <small>PERPETUAL · HISTORICAL REPLAY</small>
+                </div>
+                <span className="interval-badge">
+                  {session?.interval ?? settings.interval}
+                </span>
               </div>
-              <span className="interval-badge">
-                {session?.interval ?? settings.interval}
-              </span>
-            </div>
-            <div className="blind-badge">
-              <Icon name="shield" size={14} />
-              <span>Blind mode</span>
-              <span className="tooltip">
-                Prices normalized to 100. Dates hidden. Symbol revealed after
-                the turn.
-              </span>
-            </div>
-          </div>
-          <div className="ohlc-bar">
-            {last ? (
-              <>
-                <span>
-                  O <b>{price(last.open)}</b>
+              <div className="blind-badge">
+                <Icon name="shield" size={14} />
+                <span>Blind mode</span>
+                <span className="tooltip">
+                  Prices normalized to 100. Dates hidden. Symbol revealed after
+                  the turn.
                 </span>
-                <span>
-                  H <b>{price(last.high)}</b>
-                </span>
-                <span>
-                  L <b>{price(last.low)}</b>
-                </span>
-                <span>
-                  C{" "}
-                  <b className={tone(last.close - last.open)}>
-                    {price(last.close)}
-                  </b>
-                </span>
-                <span className="bar-count">
-                  {game?.bars ?? 0} candles revealed
-                </span>
-              </>
-            ) : (
-              <>
-                <span>BTCUSDT</span>
-                <span>Free historical market data</span>
-                <span className="bar-count">No future data shown</span>
-              </>
-            )}
-          </div>
-          {candles.length ? (
-            <PriceChart
-              key={session?.cursor}
-              candles={candles}
-              lines={lines}
-              fills={
-                game?.fills
-                  .slice(turnFillStart.current)
-                  .filter(
-                    (f) =>
-                      f.time >= candles[0].time && f.time <= (last?.time ?? 0),
-                  ) ?? []
-              }
-              anchor={session?.candles.length ?? 0}
-              onLine={onLine}
-              onLinePreview={onLinePreview}
-              onDragStart={() => {
-                setPlaying(false);
-                stopHold();
-              }}
-              textScale={DISPLAY_SIZES[settings.displaySize]}
-              theme={settings.theme}
-              expanded={chartExpanded}
-              onExpand={() => setChartExpanded((v) => !v)}
-            />
-          ) : (
-            <div className="empty-chart">
-              <div className="empty-illustration">
-                <svg viewBox="0 0 220 100" fill="none" aria-hidden="true">
-                  <path
-                    d="M0 76h220M0 35h220"
-                    stroke="#283232"
-                    strokeDasharray="4 5"
-                  />
-                  {[
-                    [30, 45, 70],
-                    [60, 31, 60],
-                    [90, 42, 68],
-                    [120, 24, 54],
-                    [150, 15, 42],
-                    [180, 21, 45],
-                  ].map(([x, y, end], i) => (
-                    <g
-                      key={x}
-                      stroke={i === 2 || i === 5 ? "#a16a6a" : "#82b991"}
-                    >
-                      <path d={`M${x} ${y - 11}v${end - y + 22}`} />
-                      <rect
-                        x={x - 6}
-                        y={y}
-                        width="12"
-                        height={end - y}
-                        rx="1"
-                        fill={i === 2 || i === 5 ? "#34292a" : "#253b30"}
-                      />
-                    </g>
-                  ))}
-                </svg>
-              </div>
-              <div className="eyebrow">LESS NOISE. MORE INSTINCT.</div>
-              <h2>Your next session starts here.</h2>
-              <p>
-                A random moment in Bitcoin’s history.
-                <br />
-                No dates. No familiar prices. Just price action.
-              </p>
-              <button
-                className="primary-button large"
-                disabled={loading}
-                onClick={() => void loadTurn("new")}
-              >
-                {loading ? <span className="spinner" /> : <Icon name="play" />}{" "}
-                {loading ? "Finding your first chart…" : "Start a new game"}
-                {!loading && <Icon name="arrow" />}
-              </button>
-              <div className="empty-notes">
-                <span>$10,000 starting balance</span>
-                <span>20 turns</span>
-                <span>100% simulated</span>
               </div>
             </div>
-          )}
-          {loading && candles.length > 0 && (
-            <div className="loading-overlay">
-              <span className="spinner" /> Loading market data…
+            <div className="ohlc-bar">
+              {last ? (
+                <>
+                  <span>
+                    O <b>{price(last.open)}</b>
+                  </span>
+                  <span>
+                    H <b>{price(last.high)}</b>
+                  </span>
+                  <span>
+                    L <b>{price(last.low)}</b>
+                  </span>
+                  <span>
+                    C{" "}
+                    <b className={tone(last.close - last.open)}>
+                      {price(last.close)}
+                    </b>
+                  </span>
+                  <span className="bar-count">
+                    {game?.bars ?? 0} candles revealed
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span>BTCUSDT</span>
+                  <span>Free historical market data</span>
+                  <span className="bar-count">No future data shown</span>
+                </>
+              )}
             </div>
-          )}
-          <div className="replay-toolbar">
-            <div className="playback-buttons">
-              <button
-                className={`play-button ${playing ? "is-playing" : ""}`}
-                disabled={!active || loading}
-                onClick={() => {
-                  stopHold();
-                  setPlaying((p) => !p);
-                }}
-                aria-label={playing ? "Pause replay" : "Play replay"}
-              >
-                <Icon name={playing ? "pause" : "play"} />
-                {playing ? "Pause" : "Play"}
-              </button>
-              <button
-                className="next-button"
-                disabled={!active || loading}
-                onPointerDown={(e) => {
-                  if (e.button === 0) beginHold();
-                }}
-                onClick={(e) => {
-                  if (e.detail === 0) void step();
-                }}
-                onPointerLeave={stopHold}
-              >
-                <Icon name="next" />
-                <span>Next</span>
-                <kbd>→</kbd>
-              </button>
-              <select
-                aria-label="Replay speed"
-                value={speed}
-                onChange={(e) => setSpeed(+e.target.value)}
-              >
-                {[1, 2, 5, 10, 20].map((s) => (
-                  <option key={s} value={s}>
-                    {s}× speed
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="turn-buttons">
-              <button
-                className="text-button repick"
-                disabled={!active || !!game?.traded || loading}
-                title={
-                  game?.traded
-                    ? "Repick is locked after your first submitted order."
-                    : "Find another chart without using a turn"
+            {candles.length ? (
+              <PriceChart
+                key={session?.cursor}
+                candles={candles}
+                lines={lines}
+                fills={
+                  game?.fills
+                    .slice(turnFillStart.current)
+                    .filter(
+                      (f) =>
+                        f.time >= candles[0].time &&
+                        f.time <= (last?.time ?? 0),
+                    ) ?? []
                 }
-                onClick={() => void loadTurn("repick")}
-              >
-                <Icon name="refresh" size={15} />
-                Repick
-              </button>
-              {game?.status === "turn-ended" ? (
+                anchor={session?.candles.length ?? 0}
+                onLine={onLine}
+                onLinePreview={onLinePreview}
+                onDragStart={() => {
+                  setPlaying(false);
+                  stopHold();
+                }}
+                textScale={DISPLAY_SIZES[settings.displaySize]}
+                theme={settings.theme}
+                expanded={chartExpanded}
+                onExpand={() => setChartExpanded((v) => !v)}
+              />
+            ) : (
+              <div className="empty-chart">
+                <div className="empty-illustration">
+                  <svg viewBox="0 0 220 100" fill="none" aria-hidden="true">
+                    <path
+                      d="M0 76h220M0 35h220"
+                      stroke="#283232"
+                      strokeDasharray="4 5"
+                    />
+                    {[
+                      [30, 45, 70],
+                      [60, 31, 60],
+                      [90, 42, 68],
+                      [120, 24, 54],
+                      [150, 15, 42],
+                      [180, 21, 45],
+                    ].map(([x, y, end], i) => (
+                      <g
+                        key={x}
+                        stroke={i === 2 || i === 5 ? "#a16a6a" : "#82b991"}
+                      >
+                        <path d={`M${x} ${y - 11}v${end - y + 22}`} />
+                        <rect
+                          x={x - 6}
+                          y={y}
+                          width="12"
+                          height={end - y}
+                          rx="1"
+                          fill={i === 2 || i === 5 ? "#34292a" : "#253b30"}
+                        />
+                      </g>
+                    ))}
+                  </svg>
+                </div>
+                <div className="eyebrow">LESS NOISE. MORE INSTINCT.</div>
+                <h2>Your next session starts here.</h2>
+                <p>
+                  A random moment in Bitcoin’s history.
+                  <br />
+                  No dates. No familiar prices. Just price action.
+                </p>
                 <button
-                  className="primary-button"
-                  disabled={loading}
-                  onClick={() => void loadTurn("next")}
-                >
-                  Next turn <Icon name="arrow" size={16} />
-                </button>
-              ) : game?.status === "finished" ? (
-                <button
-                  className="primary-button"
+                  className="primary-button large"
                   disabled={loading}
                   onClick={() => void loadTurn("new")}
                 >
-                  New game <Icon name="arrow" size={16} />
+                  {loading ? (
+                    <span className="spinner" />
+                  ) : (
+                    <Icon name="play" />
+                  )}{" "}
+                  {loading ? "Finding your first chart…" : "Start a new game"}
+                  {!loading && <Icon name="arrow" />}
                 </button>
-              ) : (
+                <div className="empty-notes">
+                  <span>$10,000 starting balance</span>
+                  <span>20 turns</span>
+                  <span>100% simulated</span>
+                </div>
+              </div>
+            )}
+            {loading && candles.length > 0 && (
+              <div className="loading-overlay">
+                <span className="spinner" /> Loading market data…
+              </div>
+            )}
+            <div className="replay-toolbar">
+              <div className="playback-buttons">
                 <button
-                  className="finish-button"
+                  className={`play-button ${playing ? "is-playing" : ""}`}
                   disabled={!active || loading}
-                  onClick={finish}
+                  onClick={() => {
+                    stopHold();
+                    setPlaying((p) => !p);
+                  }}
+                  aria-label={playing ? "Pause replay" : "Play replay"}
                 >
-                  <Icon name="flag" size={15} />
-                  Finish turn
+                  <Icon name={playing ? "pause" : "play"} />
+                  {playing ? "Pause" : "Play"}
                 </button>
+                <button
+                  className="next-button"
+                  disabled={!active || loading}
+                  onPointerDown={(e) => {
+                    if (e.button === 0) beginHold();
+                  }}
+                  onClick={(e) => {
+                    if (e.detail === 0) void step();
+                  }}
+                  onPointerLeave={stopHold}
+                >
+                  <Icon name="next" />
+                  <span>Next</span>
+                  <kbd>→</kbd>
+                </button>
+                <select
+                  aria-label="Replay speed"
+                  value={speed}
+                  onChange={(e) => setSpeed(+e.target.value)}
+                >
+                  {[1, 2, 5, 10, 20].map((s) => (
+                    <option key={s} value={s}>
+                      {s}× speed
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="turn-buttons">
+                <button
+                  className="text-button repick"
+                  disabled={!active || !!game?.traded || loading}
+                  title={
+                    game?.traded
+                      ? "Repick is locked after your first submitted order."
+                      : "Find another chart without using a turn"
+                  }
+                  onClick={() => void loadTurn("repick")}
+                >
+                  <Icon name="refresh" size={15} />
+                  Repick
+                </button>
+                {game?.status === "turn-ended" ? (
+                  <button
+                    className="primary-button"
+                    disabled={loading}
+                    onClick={() => void loadTurn("next")}
+                  >
+                    Next turn <Icon name="arrow" size={16} />
+                  </button>
+                ) : game?.status === "finished" ? (
+                  <button
+                    className="primary-button"
+                    disabled={loading}
+                    onClick={() => void loadTurn("new")}
+                  >
+                    New game <Icon name="arrow" size={16} />
+                  </button>
+                ) : (
+                  <button
+                    className="finish-button"
+                    disabled={!active || loading}
+                    onClick={finish}
+                  >
+                    <Icon name="flag" size={15} />
+                    Finish turn
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className="chart-footer">
+              <span>
+                <i className="status-dot" />
+                {game?.status === "turn-ended"
+                  ? "Turn complete · no more candles revealed"
+                  : game?.status === "finished"
+                    ? "Game complete"
+                    : session?.source === "local"
+                      ? "Local history · Binance Futures"
+                      : "Historical data · Binance Futures"}
+              </span>
+              <span>
+                <kbd>space</kbd> play / pause{" "}
+                <span className="footer-separator">·</span> Hold <kbd>→</kbd> to
+                advance
+              </span>
+              <a
+                href="https://www.tradingview.com/"
+                target="_blank"
+                rel="noreferrer"
+                className="chart-attribution"
+              >
+                Charts by TradingView ↗
+              </a>
+            </div>
+          </section>
+          <section className="panel activity-panel">
+            <div className="activity-heading">
+              <div>
+                <h2>Orders & activity</h2>
+                <span className="small-badge">
+                  {game?.orders.length ?? 0} PENDING
+                </span>
+              </div>
+              <span className="muted">
+                {game?.traded
+                  ? "Repick locked for this turn"
+                  : "Your decisions, recorded."}
+              </span>
+            </div>
+            <div className="activity-content">
+              {game?.orders.map((o) => (
+                <div className="pending-row" key={o.id}>
+                  <span className={`position-badge ${o.side}`}>
+                    {o.side.toUpperCase()}
+                  </span>
+                  <strong>{o.type === "stop" ? "Stop market" : "Limit"}</strong>
+                  <span>
+                    Entry <b>{price(o.entry)}</b>
+                  </span>
+                  <span>
+                    SL <b>{price(o.sl)}</b>
+                  </span>
+                  <span>
+                    TP <b>{o.tp ? price(o.tp) : "—"}</b>
+                  </span>
+                  <span>{o.qty.toFixed(3)} units</span>
+                  <button
+                    className="text-button negative"
+                    disabled={loading}
+                    onClick={() => safe((g) => cancelOrder(g, o.id))}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ))}
+              {game?.fills.length ? (
+                <div className="table-scroll">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Action</th>
+                        <th>Side</th>
+                        <th>Price</th>
+                        <th>Size (units)</th>
+                        <th>Fee (USDT)</th>
+                        <th>Sequence</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {game.fills
+                        .slice(-50)
+                        .reverse()
+                        .map((f, i) => (
+                          <tr key={`${f.time}-${i}`}>
+                            <td>{f.action}</td>
+                            <td
+                              className={
+                                f.side === "long" ? "positive" : "negative"
+                              }
+                            >
+                              {f.side === "long" ? "Buy" : "Sell"}
+                            </td>
+                            <td>{price(f.price)}</td>
+                            <td>{f.qty.toFixed(3)}</td>
+                            <td>{money(f.fee)}</td>
+                            <td className="muted">#{game.fills.length - i}</td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                !game?.orders.length && (
+                  <div className="activity-empty">
+                    <Icon name="history" size={20} />
+                    <span>Your orders and fills will appear here.</span>
+                  </div>
+                )
               )}
             </div>
-          </div>
-          <div className="chart-footer">
-            <span>
-              <i className="status-dot" />
-              {game?.status === "turn-ended"
-                ? "Turn complete · no more candles revealed"
-                : game?.status === "finished"
-                  ? "Game complete"
-                  : session?.source === "local"
-                    ? "Local history · Binance Futures"
-                    : "Historical data · Binance Futures"}
-            </span>
-            <span>
-              <kbd>space</kbd> play / pause{" "}
-              <span className="footer-separator">·</span> Hold <kbd>→</kbd> to
-              advance
-            </span>
-          </div>
-        </section>
-        <aside className="trading-sidebar">
+          </section>
+        </div>
+        <aside className="trading-sidebar" aria-label="Order manager">
           <section className="panel order-panel">
             <div className="panel-title">
               <h2>Order ticket</h2>
@@ -1309,98 +1408,6 @@ export default function TradingGame() {
           </section>
         </aside>
       </div>
-      <section className="panel activity-panel">
-        <div className="activity-heading">
-          <div>
-            <h2>Orders & activity</h2>
-            <span className="small-badge">
-              {game?.orders.length ?? 0} PENDING
-            </span>
-          </div>
-          <span className="muted">
-            {game?.traded
-              ? "Repick locked for this turn"
-              : "Your decisions, recorded."}
-          </span>
-        </div>
-        {game?.orders.map((o) => (
-          <div className="pending-row" key={o.id}>
-            <span className={`position-badge ${o.side}`}>
-              {o.side.toUpperCase()}
-            </span>
-            <strong>{o.type === "stop" ? "Stop market" : "Limit"}</strong>
-            <span>
-              Entry <b>{price(o.entry)}</b>
-            </span>
-            <span>
-              SL <b>{price(o.sl)}</b>
-            </span>
-            <span>
-              TP <b>{o.tp ? price(o.tp) : "—"}</b>
-            </span>
-            <span>{o.qty.toFixed(3)} units</span>
-            <button
-              className="text-button negative"
-              disabled={loading}
-              onClick={() => safe((g) => cancelOrder(g, o.id))}
-            >
-              Cancel
-            </button>
-          </div>
-        ))}
-        {game?.fills.length ? (
-          <div className="table-scroll">
-            <table>
-              <thead>
-                <tr>
-                  <th>Action</th>
-                  <th>Side</th>
-                  <th>Price</th>
-                  <th>Size (units)</th>
-                  <th>Fee (USDT)</th>
-                  <th>Sequence</th>
-                </tr>
-              </thead>
-              <tbody>
-                {game.fills
-                  .slice(-50)
-                  .reverse()
-                  .map((f, i) => (
-                    <tr key={`${f.time}-${i}`}>
-                      <td>{f.action}</td>
-                      <td
-                        className={f.side === "long" ? "positive" : "negative"}
-                      >
-                        {f.side === "long" ? "Buy" : "Sell"}
-                      </td>
-                      <td>{price(f.price)}</td>
-                      <td>{f.qty.toFixed(3)}</td>
-                      <td>{money(f.fee)}</td>
-                      <td className="muted">#{game.fills.length - i}</td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          !game?.orders.length && (
-            <div className="activity-empty">
-              <Icon name="history" size={20} />
-              <span>Your orders and fills will appear here.</span>
-            </div>
-          )
-        )}
-      </section>
-      <footer className="app-footer">
-        <span>
-          <span className="footer-logo">pa.</span> A little practice. A better
-          process.
-        </span>
-        <span>Simulated execution · 0.01% market slippage · No funding</span>
-        <a href="https://www.tradingview.com/" target="_blank" rel="noreferrer">
-          Charts by TradingView ↗
-        </a>
-      </footer>
       {toast && (
         <div className="toast" role="status">
           <Icon name="info" size={17} />
@@ -1426,6 +1433,10 @@ export default function TradingGame() {
               $10,000 <small>USDT</small>
             </strong>
             <p>Resets with every new game. Carries across all 20 turns.</p>
+          </div>
+          <div className="settings-execution">
+            <span>Execution model</span>
+            <p>Simulated execution · 0.01% market slippage · No funding</p>
           </div>
           <label className="field-label">
             Risk per trade <span>% of account balance</span>
@@ -1904,25 +1915,27 @@ function SummaryView({
 }
 
 function GameProgress({ game }: { game: Game | null }) {
+  const completed = game?.turns.length ?? 0;
   return (
     <div className="game-progress">
-      <div>
-        <span>
-          {game
-            ? `GAME ${game.status === "finished" ? "COMPLETE" : "IN PROGRESS"}`
-            : "A FRESH PERSPECTIVE, EVERY TURN"}
-        </span>
-        <strong>
-          {game ? `Turn ${String(game.turn).padStart(2, "0")}` : "20 turns"}{" "}
-          <span>/ 20</span>
-        </strong>
-      </div>
-      <div className="progress-track">
+      <strong>
+        {game ? `Turn ${String(game.turn).padStart(2, "0")}` : "Not started"}{" "}
+        <span>/ 20</span>
+      </strong>
+      <div
+        className="progress-track"
+        role="progressbar"
+        aria-label="Completed turns"
+        aria-valuemin={0}
+        aria-valuemax={20}
+        aria-valuenow={completed}
+        aria-valuetext={`${completed} of 20 turns completed`}
+      >
         {Array.from({ length: 20 }, (_, i) => (
           <i
             key={i}
             className={
-              i < (game?.turns.length ?? 0)
+              i < completed
                 ? "done"
                 : i === (game?.turn ?? 0) - 1
                   ? "current"

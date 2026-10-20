@@ -78,9 +78,9 @@ This specification incorporates the decisions agreed on October 20, 2026. The im
 
 ## Layout and statistics
 
-- Large price chart on the left; order ticket, position management, and current-turn metrics on the right.
-- Top: balance, game realized/unrealized PnL, turn progress, win rate, closed trade count, and fees.
-- Settings and summary/history controls in the header.
+- Left column: chart above a scrollable orders/activity panel. Right column: order ticket, position management, and current-turn metrics. Both columns fill the remaining browser height; use natural header/statistics heights rather than fixed viewport offsets. Resize automatically, with independent scrolling for overflow and stacked columns on narrow screens.
+- One statistics strip contains balance, game realized/unrealized PnL, turn count/progress, win rate, closed trade count, and fees. Do not show a separate turn-progress area.
+- Settings and summary/history controls in the header. Remove the page footer; show simulated-execution/slippage/no-funding information read-only inside Settings. Preserve visible TradingView attribution in the chart status bar.
 - Current-turn realized/unrealized PnL and fees.
 - Summary: final balance, net return, win rate, fees, profit factor, per-turn balance plot and results, and closed-trade review.
 - Fully closed position cycles count as trades; partial closes remain in the same trade. Win rate uses net results after fees. Label drawdown as measured at turn end.

@@ -208,15 +208,7 @@ kbd {
   height: 13px;
   transform: translateY(-8px);
 }
-.topbar-center {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  font-family: var(--mono);
-  font-size: 0.8125rem;
-  letter-spacing: 1px;
-  color: var(--muted);
-}
+
 .live-dot,
 .status-dot {
   display: inline-block;
@@ -294,31 +286,7 @@ h1 {
 h1 > span {
   color: var(--muted);
 }
-.game-progress {
-  width: 280px;
-}
-.game-progress > div:first-child {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 13px;
-  gap: 8px;
-}
-.game-progress > div:first-child > span {
-  font-family: var(--mono);
-  font-size: 0.75rem;
-  letter-spacing: 0.6px;
-  color: var(--muted);
-}
-.game-progress strong {
-  font-size: 1rem;
-  font-family: var(--mono);
-  font-weight: 400;
-  white-space: nowrap;
-}
-.game-progress strong span {
-  color: var(--border-strong);
-}
+
 .progress-track {
   display: flex;
   gap: 4px;
@@ -1180,26 +1148,7 @@ th:last-child {
   margin-left: auto;
   font-size: 0.875rem;
 }
-.app-footer {
-  padding: 24px 0 25px;
-  display: flex;
-  justify-content: space-between;
-  gap: 20px;
-  color: var(--muted);
-  font-size: 0.8125rem;
-  align-items: center;
-}
-.footer-logo {
-  font-size: 1.375rem;
-  font-weight: 700;
-  letter-spacing: -1px;
-  color: var(--muted);
-  vertical-align: middle;
-  margin-right: 9px;
-}
-.app-footer a {
-  color: var(--muted);
-}
+
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -1571,9 +1520,7 @@ th:last-child {
   .app-shell {
     padding: 0 20px;
   }
-  .topbar-center {
-    display: none;
-  }
+
   .metric {
     padding: 0 16px;
   }
@@ -1618,12 +1565,7 @@ th:last-child {
   .bar-count {
     display: none;
   }
-  .game-progress {
-    width: 250px;
-  }
-  .app-footer > span:nth-child(2) {
-    display: none;
-  }
+
   .protection-inputs {
     gap: 7px;
   }
@@ -1673,19 +1615,7 @@ th:last-child {
     padding: 25px 0;
     align-items: flex-start;
   }
-  .game-progress {
-    width: 190px;
-    margin-top: 3px;
-  }
-  .game-progress > div:first-child > span {
-    display: none;
-  }
-  .game-progress > div:first-child {
-    justify-content: flex-end;
-  }
-  .game-progress > div:first-child strong {
-    font-size: 0.9375rem;
-  }
+
   h1 {
     font-size: 1.875rem;
   }
@@ -1743,16 +1673,7 @@ th:last-child {
     display: block;
     padding: 24px 0 20px;
   }
-  .game-progress {
-    width: 100%;
-    margin-top: 24px;
-  }
-  .game-progress > div:first-child > span {
-    display: block;
-  }
-  .game-progress > div:first-child {
-    justify-content: space-between;
-  }
+
   .metric {
     padding: 15px 12px;
     gap: 8px;
@@ -1883,16 +1804,7 @@ th:last-child {
     font-size: 0.875rem;
     padding: 10px;
   }
-  .app-footer {
-    font-size: 0.75rem;
-    gap: 12px;
-  }
-  .app-footer > span {
-    max-width: 60%;
-  }
-  .footer-logo {
-    font-size: 1.1875rem;
-  }
+
   .modal-backdrop {
     padding: 12px;
   }
@@ -2109,11 +2021,7 @@ select {
 .has-session .metric small {
   display: none;
 }
-.has-session .workspace {
-  height: calc(100dvh - 164px);
-  min-height: 620px;
-  align-items: stretch;
-}
+
 .has-session .chart-panel {
   height: 100%;
   display: flex;
@@ -2280,18 +2188,8 @@ select {
   .has-session .topbar-center {
     display: flex;
   }
-  .topbar-center .game-progress {
-    width: 205px;
-  }
-  .topbar-center .game-progress > div:first-child > span {
-    display: none;
-  }
 }
 @media (max-width: 850px) {
-  .has-session .workspace {
-    height: auto;
-    min-height: 0;
-  }
   .has-session .chart-panel {
     height: 76dvh;
     min-height: 560px;
@@ -2336,5 +2234,307 @@ select {
   }
   .drawing-instruction span {
     display: none;
+  }
+}
+
+/* One viewport, with natural header rows and two independently scrollable columns. */
+.app-shell {
+  height: 100dvh;
+  min-height: 52rem;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 12px 12px;
+}
+.topbar {
+  height: auto;
+  min-height: 64px;
+  padding: 8px 0;
+  flex-shrink: 0;
+}
+.game-heading {
+  flex-shrink: 0;
+  padding: 12px 0;
+}
+.metrics-strip,
+.has-session .metrics-strip {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 10px 0;
+  grid-template-columns: 1.15fr 1.15fr 1fr 1fr 1fr 0.7fr 1fr;
+}
+.error-banner {
+  flex-shrink: 0;
+  margin: 0;
+}
+.metric {
+  min-width: 0;
+  padding: 0 16px;
+}
+.turn-metric .game-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+.turn-metric .game-progress strong {
+  font: 1.375rem var(--mono);
+  white-space: nowrap;
+}
+.turn-metric .game-progress strong span {
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+.turn-metric .progress-track {
+  width: 100%;
+  gap: 2px;
+}
+.turn-metric .progress-track i {
+  min-width: 0;
+}
+.workspace,
+.has-session .workspace {
+  flex: 1 1 0;
+  min-height: 0;
+  height: auto;
+  grid-template-rows: minmax(0, 1fr);
+  align-items: stretch;
+}
+.left-panel {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) clamp(9rem, 22dvh, 18rem);
+  gap: 12px;
+}
+.left-panel .chart-panel {
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.chart-heading,
+.ohlc-bar,
+.replay-toolbar,
+.chart-footer {
+  flex-shrink: 0;
+}
+.left-panel .empty-chart,
+.left-panel .chart-loading {
+  min-height: 0;
+  height: auto;
+  flex: 1;
+}
+.left-panel .activity-panel {
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+.activity-heading {
+  flex-shrink: 0;
+}
+.activity-content {
+  min-height: 0;
+  flex: 1;
+  overflow: auto;
+  scrollbar-width: thin;
+}
+.activity-content > .table-scroll {
+  max-height: none;
+  overflow: visible;
+}
+.activity-content > .activity-empty {
+  min-height: 0;
+  height: 100%;
+}
+.trading-sidebar,
+.has-session .trading-sidebar {
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  max-height: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--panel);
+}
+.trading-sidebar > section,
+.has-session .trading-sidebar > section {
+  width: 100%;
+  grid-column: auto;
+  grid-row: auto;
+  flex-shrink: 0;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+}
+.trading-sidebar > .turn-status {
+  flex: 1 0 auto;
+  border-bottom: 0;
+}
+.chart-attribution {
+  margin-left: auto;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.settings-execution {
+  padding: 14px 16px;
+  margin-bottom: 22px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--panel-raised);
+}
+.settings-execution > span {
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+.settings-execution p {
+  margin-top: 8px;
+  font-size: 0.875rem;
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
+.app-shell:not(.has-session) {
+  height: auto;
+  min-height: 100dvh;
+}
+.app-shell:not(.has-session) .left-panel {
+  grid-template-rows: minmax(42rem, 1fr) 10rem;
+}
+.left-panel .chart-panel.is-expanded,
+.has-session .left-panel .chart-panel.is-expanded {
+  height: auto;
+  min-height: 0;
+}
+@media (max-width: 1150px) {
+  .metric {
+    padding: 0 10px;
+  }
+  .turn-metric .game-progress strong {
+    font-size: 1.125rem;
+  }
+}
+@media (max-width: 850px) {
+  .app-shell,
+  .app-shell.has-session {
+    height: auto;
+    min-height: 100dvh;
+  }
+  .metrics-strip,
+  .has-session .metrics-strip {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    padding: 0;
+  }
+  .metrics-strip .metric {
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 12px;
+  }
+  .metrics-strip .metric:nth-child(3n) {
+    border-right: 0;
+  }
+  .metrics-strip .metric:nth-last-child(-n + 1) {
+    border-bottom: 0;
+  }
+  .workspace,
+  .has-session .workspace {
+    flex: none;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto;
+  }
+  .left-panel,
+  .app-shell:not(.has-session) .left-panel {
+    grid-template-rows: minmax(460px, 70dvh) 15rem;
+  }
+  .trading-sidebar,
+  .has-session .trading-sidebar {
+    height: auto;
+    max-height: none;
+    overflow: visible;
+  }
+  .left-panel .chart-panel,
+  .has-session .left-panel .chart-panel {
+    height: 100%;
+    min-height: 0;
+  }
+  .left-panel .chart-panel.is-expanded,
+  .has-session .left-panel .chart-panel.is-expanded {
+    height: auto;
+  }
+}
+@media (max-width: 540px) {
+  .app-shell {
+    padding: 0 8px 8px;
+  }
+  .topbar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .header-actions {
+    margin-left: auto;
+  }
+  .metric strong,
+  .has-session .metric strong {
+    font-size: 1.125rem;
+  }
+  .metric > span,
+  .has-session .metric > span {
+    font-size: 0.75rem;
+  }
+  .turn-metric .game-progress strong {
+    font-size: 1rem;
+  }
+  .left-panel,
+  .app-shell:not(.has-session) .left-panel {
+    grid-template-rows: minmax(460px, 75dvh) 15rem;
+  }
+}
+
+@media (max-width: 850px) {
+  .app-shell:not(.has-session) .left-panel {
+    grid-template-rows: minmax(42rem, 75dvh) 15rem;
+  }
+}
+
+/* Focused charts keep their controls reachable in very short windows too. */
+.chart-panel.is-expanded {
+  overflow: auto;
+}
+.chart-panel.is-expanded .chart-workbench {
+  flex: 1 0 12rem;
+}
+
+@media (min-width: 851px) and (max-width: 1150px) {
+  .metrics-strip,
+  .has-session .metrics-strip {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    padding: 0;
+  }
+  .metrics-strip .metric {
+    padding: 10px 12px;
+  }
+  .metrics-strip .metric:nth-child(-n + 4) {
+    border-bottom: 1px solid var(--border);
+  }
+  .metrics-strip .metric:nth-child(4n) {
+    border-right: 0;
+  }
+}
+@media (max-width: 540px) {
+  .metrics-strip,
+  .has-session .metrics-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .metrics-strip .metric:nth-child(n) {
+    border-right: 1px solid var(--border);
+  }
+  .metrics-strip .metric:nth-child(2n) {
+    border-right: 0;
   }
 }

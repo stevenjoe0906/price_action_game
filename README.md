@@ -79,9 +79,9 @@ Trade count and win rate use **fully closed position cycles**, net of entry/exit
 
 ## Display and readability
 
-The terminal uses the full browser width with no maximum page-width cap. During a game, compact account statistics and turn progress leave most of the viewport height for the chart; the trading sidebar scrolls independently. The Expand Chart toolbar button provides a focused chart view while keeping replay controls available. Smaller screens keep a stacked layout.
+The terminal uses the full browser width with no maximum page-width cap. Turn count and progress share the account statistics strip. The left column contains the chart and a bounded, scrollable orders/activity panel; the right column contains the order manager and fills the same remaining browser height. Header/statistics/error rows take their natural height, and the workspace flexes to the bottom without a hard-coded header offset. The activity list and trading sidebar scroll independently, so pending orders, fills, and position controls remain accessible after resizing or changing font size. Narrow windows stack the columns, and short windows can scroll the page to retain usable chart/control sizes. The Expand Chart toolbar button provides a focused chart view while keeping replay controls available. Smaller screens keep a stacked layout.
 
-Use the header’s **Light / Dark** switch or **Settings → Appearance** to change the interface, chart background, grids, candles, price labels, and annotations. Your appearance preference is saved locally and changing it does not reset the game.
+Use the header’s **Light / Dark** switch or **Settings → Appearance** to change the interface, chart background, grids, candles, price labels, and annotations. Your appearance preference is saved locally and changing it does not reset the game. The page footer is removed; the read-only simulated-execution/slippage/funding note is in Settings. TradingView attribution remains visible in the chart status bar.
 
 The default UI uses larger text, wider trading panels, and 14-pixel chart labels. In **Settings → Display size**, choose Comfortable, Large (+15%), or Extra large (+30%). This scales UI typography, panel widths, and chart labels together without requiring browser zoom. Existing saved risk/interval settings are retained when upgrading.
 
@@ -109,7 +109,7 @@ pnpm typecheck
 pnpm build
 ```
 
-Tests cover fills, fees, risk sizing, SL-first ambiguity, gaps, partial closes, reversal accounting, atomic rejection, margin, liquidation, game lifecycle, candle parsing/aggregation, drawing history, and settings migrations. DOM interaction tests exercise drawing creation, live previews, editing, measurements, hiding, cancellation, and undo/redo with a simulated chart-coordinate adapter. An integration test uses the downloaded real archives across all six intervals (skipped when no local data pack exists).
+Tests cover fills, fees, risk sizing, SL-first ambiguity, gaps, partial closes, reversal accounting, atomic rejection, margin, liquidation, game lifecycle, candle parsing/aggregation, drawing history, and settings migrations. DOM interaction tests exercise drawing creation, live previews, editing, measurements, hiding, cancellation, and undo/redo with a simulated chart-coordinate adapter. Layout/Settings regressions check the two-column DOM hierarchy, turn-progress placement, retained chart attribution, removed page footer, and read-only execution note. An integration test uses the downloaded real archives across all six intervals (skipped when no local data pack exists).
 
 ## Source layout
 
