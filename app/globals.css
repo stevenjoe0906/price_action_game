@@ -2226,11 +2226,12 @@ select {
 /* One viewport, with natural header rows and two independently scrollable columns. */
 .app-shell {
   height: 100dvh;
-  min-height: 52rem;
+  min-height: 0;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 0 12px 12px;
+  padding: 0 12px;
 }
 .topbar {
   height: auto;
@@ -2287,7 +2288,13 @@ select {
   min-width: 0;
   min-height: 0;
   display: grid;
-  grid-template-rows: minmax(0, 1fr) 12px clamp(9rem, 22dvh, 18rem);
+  height: 100%;
+  overflow: hidden;
+  grid-template-rows: minmax(0, 1fr) 12px clamp(
+      0px,
+      400px,
+      calc(100% - 12px - 8rem)
+    );
   gap: 0;
 }
 .left-panel .chart-panel {
@@ -2383,14 +2390,6 @@ select {
   line-height: 1.7;
   color: var(--text-secondary);
 }
-.app-shell:not(.has-session) {
-  height: auto;
-  min-height: 100dvh;
-}
-.app-shell:not(.has-session) .left-panel {
-  height: calc(52rem + 12px);
-  grid-template-rows: minmax(0, 1fr) 12px 10rem;
-}
 .left-panel .chart-panel.is-expanded,
 .has-session .left-panel .chart-panel.is-expanded {
   height: auto;
@@ -2409,6 +2408,7 @@ select {
   .app-shell.has-session {
     height: auto;
     min-height: 100dvh;
+    overflow: visible;
   }
   .metrics-strip,
   .has-session .metrics-strip {
@@ -2434,8 +2434,8 @@ select {
   }
   .left-panel,
   .app-shell:not(.has-session) .left-panel {
-    height: calc(max(460px, 70dvh) + 15rem + 12px);
-    grid-template-rows: minmax(0, 1fr) 12px 15rem;
+    height: calc(max(460px, 70dvh) + 400px + 12px);
+    grid-template-rows: minmax(0, 1fr) 12px 400px;
   }
   .trading-sidebar,
   .has-session .trading-sidebar {
@@ -2477,15 +2477,15 @@ select {
   }
   .left-panel,
   .app-shell:not(.has-session) .left-panel {
-    height: calc(max(460px, 75dvh) + 15rem + 12px);
-    grid-template-rows: minmax(0, 1fr) 12px 15rem;
+    height: calc(max(460px, 75dvh) + 400px + 12px);
+    grid-template-rows: minmax(0, 1fr) 12px 400px;
   }
 }
 
 @media (max-width: 850px) {
   .app-shell:not(.has-session) .left-panel {
-    height: calc(max(42rem, 75dvh) + 15rem + 12px);
-    grid-template-rows: minmax(0, 1fr) 12px 15rem;
+    height: calc(max(42rem, 75dvh) + 400px + 12px);
+    grid-template-rows: minmax(0, 1fr) 12px 400px;
   }
 }
 
@@ -2630,4 +2630,39 @@ select {
 .panel-divider[aria-disabled="true"] {
   pointer-events: none;
   visibility: hidden;
+}
+
+/* Chart overlays stay inside their own pane, below replay controls and dialogs. */
+.left-panel .chart-panel {
+  isolation: isolate;
+  overflow: auto;
+}
+.left-panel .chart-panel > .chart-workbench,
+.left-panel .chart-panel > .empty-chart,
+.left-panel .chart-panel > .chart-loading {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+.left-panel .chart-panel > .empty-chart {
+  overflow: auto;
+  justify-content: safe center;
+  padding: 16px;
+}
+.empty-chart > * {
+  flex-shrink: 0;
+}
+.empty-illustration {
+  margin-top: 0;
+}
+.chart-heading,
+.ohlc-bar,
+.replay-toolbar,
+.chart-footer {
+  position: relative;
+  z-index: 1;
+  background-color: var(--panel);
+}
+.replay-toolbar {
+  background-color: var(--panel-raised);
 }

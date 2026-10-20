@@ -28,10 +28,11 @@ export default function ResizableChartPanels({
       parseFloat(
         node.ownerDocument.defaultView!.getComputedStyle(node).fontSize,
       ) || 16;
-    const scale = Math.min(1, available / (27 * rem));
+    const chartMin = Math.min(20 * rem, Math.max(8 * rem, available - 400));
+    const scale = Math.min(1, available / (chartMin + 7 * rem));
     return {
       available,
-      min: 20 * rem * scale,
+      min: chartMin * scale,
       max: available - 7 * rem * scale,
     };
   };
