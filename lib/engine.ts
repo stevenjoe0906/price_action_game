@@ -506,3 +506,17 @@ export function cancelOrder(original: Game, id: number): Game {
     orders: original.orders.filter((o) => o.id !== id),
   };
 }
+
+export function restoreProtection(original: Game, kind: "sl" | "tp"): Game {
+  const p = original.position;
+  if (!p || original.status !== "active" || p[kind] !== null)
+    return copy(original);
+  const long = p.side === "long";
+  const factor = kind === "sl" ? (long ? 0.995 : 1.005) : long ? 1.01 : 0.99;
+  const level = original.last * factor;
+  return modifyProtection(
+    original,
+    kind === "sl" ? level : p.sl,
+    kind === "tp" ? level : p.tp,
+  );
+}

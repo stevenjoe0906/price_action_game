@@ -8,6 +8,7 @@ export type ChartLine = {
   title: string;
   draggable?: boolean;
   cancelLabel?: string;
+  addProtection?: ("sl" | "tp")[];
 };
 
 export function workingChartLines(
@@ -25,6 +26,9 @@ export function workingChartLines(
       title: `AVG ${p.side.toUpperCase()} ${qty}`,
       price: p.entry,
       color: palette.neutral,
+      addProtection: active
+        ? (["tp", "sl"] as const).filter((kind) => p[kind] === null)
+        : [],
     });
     if (p.sl !== null)
       lines.push({

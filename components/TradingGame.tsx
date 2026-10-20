@@ -1,6 +1,7 @@
 "use client";
 import dynamic from "next/dynamic";
 import ResizableChartPanels from "./ResizableChartPanels";
+import PositionProtection from "./PositionProtection";
 import {
   useCallback,
   useEffect,
@@ -20,6 +21,7 @@ import {
   liquidationPrice,
   margin,
   modifyProtection,
+  restoreProtection,
   nextTurn,
   slip,
   submitOrder,
@@ -296,10 +298,12 @@ export default function TradingGame() {
     setPositionSL(
       game?.position?.sl != null ? String(+game.position.sl.toFixed(6)) : "",
     );
+  }, [game?.position?.sl]);
+  useEffect(() => {
     setPositionTP(
       game?.position?.tp ? String(+game.position.tp.toFixed(6)) : "",
     );
-  }, [game?.position?.sl, game?.position?.tp]);
+  }, [game?.position?.tp]);
   useEffect(() => {
     if (game?.status === "finished" && !summarySaved.current) {
       summarySaved.current = true;
@@ -549,6 +553,10 @@ export default function TradingGame() {
         ),
       );
     }
+  };
+  const addPositionProtection = (kind: "sl" | "tp") => {
+    if (locked.current || gameRef.current?.status !== "active") return;
+    safe((g) => restoreProtection(g, kind));
   };
   const startTicket = () => {
     setTicket(true);
@@ -930,6 +938,7 @@ export default function TradingGame() {
                     ) ?? []
                 }
                 anchor={session?.candles.length ?? 0}
+                onAddProtection={addPositionProtection}
                 onCancelLine={onCancelLine}
                 onLine={onLine}
                 onLinePreview={onLinePreview}
@@ -1430,60 +1439,20 @@ export default function TradingGame() {
                     </button>
                   ))}
                 </div>
-                <div className="protection-inputs">
-                  <PriceInput
-                    label="Position SL"
-                    value={positionSL}
-                    hint={
-                      game.position.sl === null ? "Not set" : "Full position"
-                    }
-                    set={setPositionSL}
-                    accent="red"
-                  />
-                  <PriceInput
-                    label="Position TP"
-                    value={positionTP}
-                    set={setPositionTP}
-                    hint="Optional"
-                    accent="green"
-                  />
-                </div>
-                <div className="protection-actions">
-                  <button
-                    className="secondary-button compact"
-                    disabled={!active || loading || game.position.sl === null}
-                    onClick={() => onCancelLine("position-sl")}
-                  >
-                    Cancel SL
-                  </button>
-                  <button
-                    className="secondary-button compact"
-                    disabled={!active || loading || game.position.tp === null}
-                    onClick={() => onCancelLine("position-tp")}
-                  >
-                    Cancel TP
-                  </button>
-                </div>
-                <p className="protection-note">
-                  SL and TP each cover {game.position.qty.toFixed(3)} units.
-                  Enter a price and update to add or replace protection; blank
-                  removes it.
-                </p>
-                <button
-                  className="secondary-button full compact"
+                <PositionProtection
+                  position={game.position}
+                  last={game.last}
+                  sl={positionSL}
+                  tp={positionTP}
                   disabled={!active || loading}
-                  onClick={() =>
-                    safe((g) =>
-                      modifyProtection(
-                        g,
-                        positionSL.trim() ? +positionSL : null,
-                        positionTP.trim() ? +positionTP : null,
-                      ),
-                    )
+                  onSL={setPositionSL}
+                  onTP={setPositionTP}
+                  onAdd={addPositionProtection}
+                  onCancel={(kind) => onCancelLine(`position-${kind}`)}
+                  onApply={(nextSL, nextTP) =>
+                    safe((g) => modifyProtection(g, nextSL, nextTP))
                   }
-                >
-                  Update protection
-                </button>
+                />
               </>
             ) : (
               <div className="no-position">

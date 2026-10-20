@@ -13,6 +13,7 @@ import {
 } from "lightweight-charts";
 import ChartDrawings from "./ChartDrawings";
 import ChartOrderMenu from "./ChartOrderMenu";
+import ChartLineControls from "./ChartLineControls";
 import type { ChartOrderType } from "@/lib/order-ticket";
 import type { Side } from "@/lib/engine";
 import { CHART_THEMES, type Theme } from "@/lib/theme";
@@ -26,6 +27,7 @@ type Props = {
   fills: Fill[];
   anchor: number;
   onCancelLine: (id: string) => void;
+  onAddProtection: (kind: "sl" | "tp") => void;
   onLine: (id: string, price: number) => void;
   onLinePreview: (id: string, price: number) => void;
   onDragStart: () => void;
@@ -43,6 +45,7 @@ export default function PriceChart({
   anchor,
   onLine,
   onCancelLine,
+  onAddProtection,
   onLinePreview,
   onDragStart,
   textScale,
@@ -250,7 +253,7 @@ export default function PriceChart({
         lineWidth: 1 as const,
         lineStyle: LineStyle.Dashed,
         axisLabelVisible: true,
-        title: line.title,
+        title: line.cancelLabel || line.addProtection?.length ? "" : line.title,
       };
       const native = priceLines.current.get(line.id);
       if (native) native.applyOptions(options);
@@ -391,7 +394,7 @@ export default function PriceChart({
           lines
             .filter(
               (line) =>
-                line.cancelLabel &&
+                (line.cancelLabel || line.addProtection?.length) &&
                 Number.isFinite(line.price) &&
                 line.price > 0,
             )
@@ -404,25 +407,22 @@ export default function PriceChart({
               )
                 return null;
               return (
-                <button
-                  key={`cancel-${line.id}`}
-                  type="button"
-                  className="chart-line-cancel"
-                  style={{ top: y, borderColor: line.color, color: line.color }}
-                  aria-label={line.cancelLabel}
-                  title={line.cancelLabel}
-                  onPointerDown={(event) => {
-                    event.preventDefault();
-                    event.stopPropagation();
+                <ChartLineControls
+                  key={`controls-${line.id}`}
+                  line={line}
+                  style={{
+                    top: y,
+                    right: (api.current?.priceScale("right").width() ?? 80) + 8,
                   }}
-                  onClick={(event) => {
-                    event.stopPropagation();
+                  onCancel={() => {
                     drag.current?.end(true);
                     onCancelLine(line.id);
                   }}
-                >
-                  ×
-                </button>
+                  onAdd={(kind) => {
+                    drag.current?.end(true);
+                    onAddProtection(kind);
+                  }}
+                />
               );
             })}
         {fills.slice(-100).map((f, i) => {

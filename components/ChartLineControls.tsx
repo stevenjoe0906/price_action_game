@@ -1,0 +1,58 @@
+"use client";
+import type { CSSProperties } from "react";
+import type { ChartLine } from "@/lib/chart-lines";
+
+export default function ChartLineControls({
+  line,
+  style,
+  onCancel,
+  onAdd,
+}: {
+  line: ChartLine;
+  style: CSSProperties;
+  onCancel: () => void;
+  onAdd: (kind: "sl" | "tp") => void;
+}) {
+  return (
+    <div
+      className="chart-line-controls"
+      role="group"
+      aria-label={line.title}
+      style={{ ...style, color: line.color }}
+      onPointerDown={(event) => event.stopPropagation()}
+    >
+      <span className="chart-control-label" title={line.title}>
+        {line.title}
+      </span>
+      {line.addProtection?.map((kind) => (
+        <button
+          key={kind}
+          type="button"
+          className={`chart-add-protection ${kind}`}
+          aria-label={`Add position ${kind === "sl" ? "stop loss" : "take profit"}`}
+          title={`Add ${kind.toUpperCase()} at a default price, then drag or edit to adjust`}
+          onClick={(event) => {
+            event.stopPropagation();
+            onAdd(kind);
+          }}
+        >
+          {kind.toUpperCase()}
+        </button>
+      ))}
+      {line.cancelLabel && (
+        <button
+          type="button"
+          className="chart-line-cancel"
+          aria-label={line.cancelLabel}
+          title={line.cancelLabel}
+          onClick={(event) => {
+            event.stopPropagation();
+            onCancel();
+          }}
+        >
+          ×
+        </button>
+      )}
+    </div>
+  );
+}

@@ -2682,21 +2682,75 @@ select {
   font-size: 0.8125rem;
   line-height: 1.5;
 }
-.chart-line-cancel {
+.chart-line-controls {
   position: absolute;
-  right: 88px;
   z-index: 8;
   transform: translateY(-50%);
-  width: 24px;
-  height: 24px;
-  min-height: 24px;
-  padding: 0;
-  border: 1px solid;
+  display: flex;
+  align-items: stretch;
+  max-width: calc(100% - 110px);
+  border: 1px solid currentColor;
   border-radius: 4px;
   background: var(--panel);
-  font-size: 1.125rem;
+  font: 0.75rem var(--mono);
+  line-height: 24px;
+  white-space: nowrap;
+}
+.chart-control-label {
+  padding: 0 7px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.chart-line-cancel,
+.chart-add-protection {
+  flex-shrink: 0;
+  position: static;
+  transform: none;
+  width: auto;
+  min-width: 26px;
+  height: 24px;
+  min-height: 24px;
+  padding: 0 5px;
+  border: 0;
+  border-left: 1px solid currentColor;
+  border-radius: 0;
+  background: var(--panel);
+  color: inherit;
+  font: inherit;
   cursor: pointer;
 }
+.chart-line-cancel {
+  font-size: 1.125rem;
+}
+.chart-add-protection.sl {
+  color: var(--red);
+}
+.chart-add-protection.tp {
+  color: var(--green);
+}
+.position-protection {
+  padding: 0 15px 15px;
+}
+.position-protection .protection-inputs {
+  margin: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+}
+.position-protection .price-input {
+  min-width: 0;
+}
+.position-protection .price-input > span {
+  flex-wrap: wrap;
+}
+.position-protection .protection-error {
+  display: block;
+  margin-top: 6px;
+  color: var(--red);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
 .chart-line-cancel:hover,
 .chart-line-cancel:focus-visible {
   background: var(--panel-raised);
