@@ -171,6 +171,8 @@ The free chart includes a custom drawing toolbar built on Lightweight Charts. It
 - Choose a drawing color, hide/show annotations, undo/redo, delete a selected annotation, or clear all drawings. Clearing can be undone. Ctrl/Cmd+Z undoes; Ctrl/Cmd+Shift+Z redoes; Delete/Backspace removes the selected drawing. Escape cancels unfinished drawing/editing or clears selection.
 - Reset View restores automatic price scaling and the latest 110 candles. Expand Chart toggles the focused chart view.
 
+The dotted price and bar-count crosshair guides remain visible while hovering over the plot with any drawing tool selected, during placement, and while editing drawings or dragging orders. They track chart coordinates through zoom, pan, resizing, theme, and display-size changes. Bar labels in blank space use logical bar positions without loading future candles. Guides clear when leaving the plot or hovering over chart menus.
+
 Annotations belong to the current chart and reset when you start a new turn or repick. They do not affect orders or fills and are not saved after refresh. Measurements use normalized prices; percentage changes are identical to those of the underlying prices. They cannot reveal future candles.
 
 ## Persistence

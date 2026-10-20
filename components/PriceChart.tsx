@@ -14,6 +14,7 @@ import {
   type UTCTimestamp,
 } from "lightweight-charts";
 import ChartDrawings from "./ChartDrawings";
+import ChartCrosshair from "./ChartCrosshair";
 import { calculateEMA, nextEMA } from "@/lib/indicators";
 import ChartOrderMenu from "./ChartOrderMenu";
 import ChartLineControls from "./ChartLineControls";
@@ -139,8 +140,9 @@ export default function PriceChart({
       },
       crosshair: {
         mode: CrosshairMode.Normal,
-        vertLine: { color: "#5f7179", labelBackgroundColor: "#303e45" },
-        horzLine: { color: "#5f7179", labelBackgroundColor: "#303e45" },
+        // Guides use a shared pointer capture layer so drawing overlays cannot hide them.
+        vertLine: { visible: false, labelVisible: false },
+        horzLine: { visible: false, labelVisible: false },
       },
     });
     const s = chart.addSeries(CandlestickSeries, {
@@ -381,6 +383,14 @@ export default function PriceChart({
           expanded={expanded}
           onExpand={onExpand}
           contextOpen={canTrade && context !== null}
+        />
+        <ChartCrosshair
+          chart={api.current}
+          series={series.current}
+          canvas={container.current}
+          anchor={anchor}
+          theme={theme}
+          textScale={textScale}
         />
         <div className="chart-watermark">
           PRICE ACTION<span>READ THE MARKET. TRUST YOUR PROCESS.</span>

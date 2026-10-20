@@ -2780,3 +2780,32 @@ select {
   cursor: pointer;
 }
 .chart-indicators input { accent-color: var(--accent); }
+
+/* Crosshair guides never intercept drawing, dragging, or chart navigation. */
+.chart-crosshair {
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  pointer-events: none;
+  overflow: hidden;
+}
+.chart-crosshair svg {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+.crosshair-price,
+.crosshair-bar {
+  position: absolute;
+  padding: 2px 5px;
+  font-family: var(--mono);
+  line-height: 1.25;
+  white-space: nowrap;
+}
+.crosshair-price {
+  transform: translateY(-50%);
+}
+.crosshair-bar {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
