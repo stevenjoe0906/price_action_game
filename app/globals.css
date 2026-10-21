@@ -3049,3 +3049,113 @@ select {
 .summary-export a {
   color: var(--accent);
 }
+
+/* Compact chart information and borderless global navigation. */
+.header-actions .history-button,
+.header-actions .theme-switch {
+  border: 0;
+  background: transparent;
+}
+.header-actions .theme-switch {
+  width: 32px;
+  height: 32px;
+  padding: 6px;
+}
+.header-actions .text-button span,
+.header-actions .history-button span {
+  display: inline;
+}
+.instrument .blind-badge {
+  display: inline-flex;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  padding: 6px;
+  width: 32px;
+  height: 32px;
+}
+.instrument .blind-badge svg {
+  width: 18px;
+}
+.instrument .blind-badge .tooltip {
+  left: auto;
+  right: 0;
+  top: 100%;
+  font-size: 0.875rem;
+  text-align: left;
+  font-weight: normal;
+}
+.chart-heading-actions {
+  margin-left: auto;
+  padding-left: 8px;
+}
+.share-card-dialog {
+  padding: 0;
+  width: min(860px, calc(100vw - 24px));
+  max-height: calc(100dvh - 32px);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--text);
+  overscroll-behavior: none;
+}
+.share-card-dialog::backdrop {
+  background: #000a;
+}
+.share-card-content {
+  padding: 18px;
+}
+.share-card-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+.share-card-heading h3 {
+  margin: 0;
+  font-size: 1.125rem;
+}
+.share-card-image {
+  display: block;
+  width: 100%;
+  max-height: 65dvh;
+  object-fit: contain;
+  border-radius: 8px;
+  -webkit-touch-callout: default;
+  user-select: auto;
+}
+.share-card-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin: 16px 0;
+}
+.share-card-content p {
+  line-height: 1.5;
+}
+@media (max-width: 540px) {
+  .header-actions {
+    gap: 5px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .header-actions .text-button,
+  .header-actions .history-button {
+    font-size: 0.8125rem;
+    padding: 4px;
+    gap: 4px;
+  }
+  .header-actions .history-button b {
+    display: none;
+  }
+  .instrument {
+    gap: 5px;
+    min-width: 0;
+  }
+  .share-card-content {
+    padding: 12px;
+  }
+}

@@ -78,6 +78,13 @@ const signed = (n: number) => `${n >= 0 ? "+" : "−"}${money(Math.abs(n))}`;
 const tone = (n: number) => (n >= 0 ? "positive" : "negative");
 function Icon({ name, size = 18 }: { name: string; size?: number }) {
   const paths: Record<string, ReactNode> = {
+    sun: (
+      <>
+        <circle cx="12" cy="12" r="4" />
+        <path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5" />
+      </>
+    ),
+    moon: <path d="M20.5 14A9 9 0 0 1 10 3.5 9 9 0 1 0 20.5 14Z" />,
     play: <path d="m8 5 11 7-11 7Z" />,
     pause: (
       <>
@@ -253,6 +260,7 @@ export default function TradingGame() {
   const buffer = useRef<Candle[]>([]);
   const turnFillStart = useRef(0);
   const [loading, setLoading] = useState(false);
+  const [loadMessage, setLoadMessage] = useState("Finding your first chart…");
   const locked = useRef(false);
   const [playing, setPlaying] = useState(false);
   const [chartExpanded, setChartExpanded] = useState(false);
@@ -370,7 +378,10 @@ export default function TradingGame() {
     setPlaying(false);
     setError("");
     try {
-      const s = await randomSession(settingsRef.current.interval);
+      const s = await randomSession(
+        settingsRef.current.interval,
+        setLoadMessage,
+      );
       const last = s.candles[s.candles.length - 1];
       let g: Game;
       if (mode === "next" && gameRef.current)
@@ -417,6 +428,7 @@ export default function TradingGame() {
     try {
       if (!buffer.current.length) {
         setLoading(true);
+        setLoadMessage("Loading next candles…");
         buffer.current = await futureCandles(
           sessionRef.current,
           gameRef.current.time,
@@ -795,8 +807,30 @@ export default function TradingGame() {
           </span>
         </a>
         <div className="header-actions">
+          <button className="text-button" onClick={() => setModal("rules")}>
+            <Icon name="book" />
+            <span>How to play</span>
+          </button>
           <button
-            className="theme-switch"
+            className="history-button"
+            onClick={() => {
+              setSelected(null);
+              setModal("history");
+            }}
+          >
+            <Icon name="history" />
+            <span>Statistics</span>
+            {saved.length > 0 && <b>{saved.length}</b>}
+          </button>
+          <button
+            className="icon-button"
+            onClick={openSettings}
+            aria-label="Settings"
+          >
+            <Icon name="settings" />
+          </button>
+          <button
+            className="theme-switch icon-button"
             aria-label={`Switch to ${settings.theme === "dark" ? "light" : "dark"} mode`}
             title={`Switch to ${settings.theme === "dark" ? "light" : "dark"} mode`}
             onClick={() => {
@@ -812,32 +846,7 @@ export default function TradingGame() {
               }
             }}
           >
-            <span aria-hidden="true">
-              {settings.theme === "dark" ? "☀" : "☾"}
-            </span>
-            <span>{settings.theme === "dark" ? "Light" : "Dark"}</span>
-          </button>
-          <button className="text-button" onClick={() => setModal("rules")}>
-            <Icon name="book" />
-            <span>How to play</span>
-          </button>
-          <button
-            className="icon-button"
-            onClick={openSettings}
-            aria-label="Settings"
-          >
-            <Icon name="settings" />
-          </button>
-          <button
-            className="history-button"
-            onClick={() => {
-              setSelected(null);
-              setModal("history");
-            }}
-          >
-            <Icon name="history" />
-            <span>Statistics</span>
-            {saved.length > 0 && <b>{saved.length}</b>}
+            <Icon name={settings.theme === "dark" ? "sun" : "moon"} />
           </button>
         </div>
       </header>
@@ -923,6 +932,18 @@ export default function TradingGame() {
                   </strong>
                   <small>PERPETUAL · HISTORICAL REPLAY</small>
                 </div>
+                <button
+                  className="blind-badge icon-button"
+                  aria-label="About blind mode"
+                  aria-describedby="blind-mode-help"
+                >
+                  <Icon name="help" size={18} />
+                  <span className="tooltip" id="blind-mode-help" role="tooltip">
+                    {revealSymbol
+                      ? "Turn complete. Real prices and UTC dates are now visible."
+                      : "Prices are normalized to 100 and dates are hidden during play. Real prices and UTC dates are revealed after the turn."}
+                  </span>
+                </button>
                 <span className="interval-badge">
                   {session?.interval ?? settings.interval}
                 </span>
@@ -957,18 +978,6 @@ export default function TradingGame() {
                     />
                   </svg>
                 </button>
-                <div
-                  className="blind-badge"
-                  tabIndex={0}
-                  aria-describedby="blind-mode-help"
-                >
-                  <Icon name="shield" size={14} />
-                  <span>{revealSymbol ? "Market revealed" : "Blind mode"}</span>
-                  <span className="tooltip" id="blind-mode-help" role="tooltip">
-                    Prices and dates are hidden during play and revealed after
-                    the turn.
-                  </span>
-                </div>
               </div>
             </div>
             <div className="ohlc-bar">
@@ -1102,7 +1111,7 @@ export default function TradingGame() {
                   ) : (
                     <Icon name="play" />
                   )}{" "}
-                  {loading ? "Finding your first chart…" : "Start a new game"}
+                  {loading ? loadMessage : "Start a new game"}
                   {!loading && <Icon name="arrow" />}
                 </button>
                 <div className="empty-notes">
@@ -1114,7 +1123,7 @@ export default function TradingGame() {
             )}
             {loading && candles.length > 0 && (
               <div className="loading-overlay">
-                <span className="spinner" /> Loading market data…
+                <span className="spinner" /> {loadMessage}
               </div>
             )}
             <div className="replay-toolbar">

@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { Summary } from "@/lib/storage";
 import { summaryCardSvg, summaryCsv, tradesCsv } from "@/lib/game-export";
 
@@ -42,6 +42,7 @@ async function cardFile(summary: Summary, name: string) {
   }
 }
 export default function SummaryExport({ summary }: { summary: Summary }) {
+  const [preview, setPreview] = useState(false);
   const [card, setCard] = useState<{ file: File; url: string } | null>(null);
   const [files, setFiles] = useState<{ name: string; url: string }[]>([]);
   const [message, setMessage] = useState("");
@@ -49,12 +50,21 @@ export default function SummaryExport({ summary }: { summary: Summary }) {
   const urls = useRef<string[]>([]);
   const base = `price-action-${summary.date.replace(/[^0-9]/g, "").slice(0, 14)}-${summary.id.replace(/[^a-zA-Z0-9-]/g, "").slice(0, 8)}`;
   useEffect(() => {
-    let live = true;
     setCard(null);
+    setPreview(false);
     setFiles([]);
     setMessage("");
     setImageError(false);
-    // Prepare before the click so native sharing retains the user's gesture.
+    return () => {
+      urls.current.forEach((url) => URL.revokeObjectURL(url));
+      urls.current = [];
+    };
+  }, [summary, base]);
+  useEffect(() => {
+    if (!preview || (card && card.file.name === `${base}.png`)) return;
+    let live = true;
+    setImageError(false);
+    // Render only when requested; the separate Share click retains native activation.
     cardFile(summary, `${base}.png`)
       .then((file) => {
         if (!live) return;
@@ -67,10 +77,10 @@ export default function SummaryExport({ summary }: { summary: Summary }) {
       });
     return () => {
       live = false;
-      urls.current.forEach((url) => URL.revokeObjectURL(url));
-      urls.current = [];
     };
-  }, [summary, base]);
+    // card is the cached result, not a trigger for another render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [preview, summary, base]);
   const share = async () => {
     if (!card) return;
     try {
@@ -81,12 +91,15 @@ export default function SummaryExport({ summary }: { summary: Summary }) {
         });
         setMessage("");
       } else {
-        download(card.url, card.file.name);
-        setMessage("Card downloaded. Attach it to your post or message.");
+        setMessage(
+          "File sharing is unavailable in this browser. Use Download, or touch and hold the image to see your browser's image options.",
+        );
       }
     } catch (error) {
       if (error instanceof Error && error.name === "AbortError") return;
-      setMessage("Sharing is unavailable. Use Download image below.");
+      setMessage(
+        "Sharing is unavailable. Use Download, or touch and hold the image for more options.",
+      );
     }
   };
   const exportCsv = () => {
@@ -109,20 +122,59 @@ export default function SummaryExport({ summary }: { summary: Summary }) {
   };
   return (
     <div className="summary-export">
-      <button className="secondary-button" disabled={!card} onClick={share}>
-        {imageError
-          ? "Image unavailable"
-          : card
-            ? "Share card"
-            : "Preparing card…"}
+      <button
+        className="secondary-button"
+        onClick={() => {
+          setMessage("");
+          setPreview(true);
+        }}
+      >
+        Share card
       </button>
       <button className="secondary-button" onClick={exportCsv}>
         Export CSVs
       </button>
-      {card && (
-        <a href={card.url} download={card.file.name}>
-          Download image
-        </a>
+      {preview && (
+        <CardPreview close={() => setPreview(false)}>
+          {card ? (
+            <img
+              className="share-card-image"
+              src={card.url}
+              alt="Price Action game summary card with balance, performance metrics and equity curve"
+            />
+          ) : (
+            <p role="status">
+              {imageError
+                ? "Could not prepare the card. Close this preview and try again."
+                : "Preparing your card…"}
+            </p>
+          )}
+          <div className="share-card-actions">
+            <button className="primary-button" disabled={!card} onClick={share}>
+              Share
+            </button>
+            <button
+              className="secondary-button"
+              disabled={!card}
+              onClick={() => {
+                if (card) {
+                  download(card.url, card.file.name);
+                  setMessage(
+                    "Download requested. On iPhone/iPad this may open a file preview. To save to Photos, use Share → Save Image, or touch and hold the card for image options.",
+                  );
+                }
+              }}
+            >
+              Download
+            </button>
+          </div>
+          <p className="input-help">
+            iPhone / iPad: tap Share, then Save Image to save to Photos when
+            available. Download saves a file and may open a preview. You can
+            also touch and hold the card for image options.
+          </p>
+          {message && <p role="status">{message}</p>}
+        </CardPreview>
       )}
       {files.map((f) => (
         <a key={f.name} href={f.url} download={f.name}>
@@ -131,7 +183,65 @@ export default function SummaryExport({ summary }: { summary: Summary }) {
             : "Download trades CSV"}
         </a>
       ))}
-      {message && <p role="status">{message}</p>}
+      {message && !preview && <p role="status">{message}</p>}
     </div>
+  );
+}
+
+function CardPreview({
+  close,
+  children,
+}: {
+  close: () => void;
+  children: ReactNode;
+}) {
+  const dialog = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const previous = document.activeElement as HTMLElement | null;
+    const node = dialog.current;
+    node?.showModal();
+    return () => {
+      node?.close();
+      previous?.focus();
+    };
+  }, []);
+  return (
+    <dialog
+      ref={dialog}
+      className="share-card-dialog"
+      aria-labelledby="share-card-title"
+      onCancel={(event) => {
+        event.preventDefault();
+        close();
+      }}
+      onKeyDown={(event) => event.stopPropagation()}
+      onClick={(event) => {
+        if (event.target === event.currentTarget) close();
+      }}
+    >
+      <div className="share-card-content">
+        <div className="share-card-heading">
+          <h3 id="share-card-title">Preview your card</h3>
+          <button
+            className="icon-button"
+            aria-label="Close card preview"
+            onClick={close}
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              aria-hidden="true"
+            >
+              <path d="m6 6 12 12M6 18 18 6" />
+            </svg>
+          </button>
+        </div>
+        {children}
+      </div>
+    </dialog>
   );
 }

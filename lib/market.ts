@@ -33,6 +33,36 @@ export type MarketSession = {
 };
 let manifest: Promise<string[] | null> | null = null;
 const cache = new Map<string, Candle[]>();
+// Raw archives are shared across timeframes; bounded caches avoid tablet memory growth.
+const rawCache = new Map<string, Candle[]>();
+const rawPending = new Map<string, Promise<Candle[]>>();
+const pending = new Map<string, Promise<Candle[]>>();
+async function rawMonth(month: string): Promise<Candle[]> {
+  const cached = rawCache.get(month);
+  if (cached) {
+    rawCache.delete(month);
+    rawCache.set(month, cached);
+    return cached;
+  }
+  if (rawPending.has(month)) return rawPending.get(month)!;
+  const task = (async () => {
+    const response = await fetch(`/data/BTCUSDT-5m-${month}.zip`);
+    if (!response.ok)
+      throw new Error(
+        `Historical archive ${month} is missing. Run pnpm data:download, then rebuild.`,
+      );
+    const rows = parseArchive(new Uint8Array(await response.arrayBuffer()));
+    rawCache.set(month, rows);
+    if (rawCache.size > 8) rawCache.delete(rawCache.keys().next().value!);
+    return rows;
+  })();
+  rawPending.set(month, task);
+  try {
+    return await task;
+  } finally {
+    rawPending.delete(month);
+  }
+}
 export function parseArchive(bytes: Uint8Array): Candle[] {
   const files = unzipSync(bytes);
   const csv = Object.entries(files).find(([name]) =>
@@ -123,18 +153,19 @@ async function localMonth(
 ): Promise<Candle[]> {
   const key = `${month}-${interval}`;
   if (cache.has(key)) return cache.get(key)!;
-  const response = await fetch(`/data/BTCUSDT-5m-${month}.zip`);
-  if (!response.ok)
-    throw new Error(
-      `Historical archive ${month} is missing. Run pnpm data:download, then rebuild.`,
-    );
-  const rows = aggregate(
-    parseArchive(new Uint8Array(await response.arrayBuffer())),
-    interval,
-  );
-  cache.set(key, rows);
-  if (cache.size > 64) cache.delete(cache.keys().next().value!);
-  return rows;
+  if (pending.has(key)) return pending.get(key)!;
+  const task = (async () => {
+    const rows = aggregate(await rawMonth(month), interval);
+    cache.set(key, rows);
+    if (cache.size > 64) cache.delete(cache.keys().next().value!);
+    return rows;
+  })();
+  pending.set(key, task);
+  try {
+    return await task;
+  } finally {
+    pending.delete(key);
+  }
 }
 async function request(params: Record<string, string>): Promise<Raw[]> {
   try {
@@ -178,13 +209,16 @@ const monthOf = (time: number) =>
   new Date(time * 1000).toISOString().slice(0, 7);
 export async function randomSession(
   interval: Interval,
+  onProgress?: (message: string) => void,
 ): Promise<MarketSession> {
+  onProgress?.("Checking historical data…");
   const months = await localMonths();
   if (months) {
     // Uniform random timestamp over available months, then reject if insufficient history.
     const duration = seconds(interval);
     const start =
       Math.max(EARLIEST, Date.parse(`${months[0]}-01T00:00:00Z`)) / 1000;
+    onProgress?.("Loading historical archives…");
     const lastRows = await localMonth(months[months.length - 1], interval);
     if (!lastRows.length)
       throw new Error(
@@ -203,11 +237,36 @@ export async function randomSession(
         (c) => c.time <= pivot,
       );
       let previous = index - 1;
+      let loaded = 1;
       while (rows.length < 1500 && previous >= 0) {
-        const expected = new Date(`${months[previous + 1]}-01T00:00:00Z`);
-        expected.setUTCMonth(expected.getUTCMonth() - 1);
-        if (months[previous] !== expected.toISOString().slice(0, 7)) break;
-        rows = [...(await localMonth(months[previous--], interval)), ...rows];
+        const batch: string[] = [];
+        const batchLimit = Math.max(
+          1,
+          Math.min(
+            4,
+            Math.ceil(
+              (1500 - rows.length) /
+                Math.max(1, Math.floor((28 * 86400) / duration)),
+            ),
+          ),
+        );
+        // Fetch consecutive history in bounded parallel batches, preserving gaps.
+        while (batch.length < batchLimit && previous >= 0) {
+          const expected = new Date(`${months[previous + 1]}-01T00:00:00Z`);
+          expected.setUTCMonth(expected.getUTCMonth() - 1);
+          if (months[previous] !== expected.toISOString().slice(0, 7)) break;
+          batch.push(months[previous--]);
+        }
+        if (!batch.length) break;
+        onProgress?.(
+          `Preparing historical candles (${loaded + batch.length} archives)…`,
+        );
+        const history = await Promise.all(
+          batch.map((month) => localMonth(month, interval)),
+        );
+        loaded += history.length;
+        rows = [...history.reverse().flat(), ...rows];
+        if (batch.length < batchLimit) break;
       }
       rows = rows.slice(-1500);
       if (rows.length < 500) continue;
@@ -227,6 +286,7 @@ export async function randomSession(
       "Not enough contiguous history for 500 candles. Download more months with pnpm data:download or choose a shorter interval.",
     );
   }
+  onProgress?.("Loading public market data…");
   const ms = seconds(interval) * 1000;
   const latest = Math.floor(Date.now() / ms) * ms - ms;
   for (let attempt = 0; attempt < 5; attempt++) {

@@ -21,6 +21,29 @@ test("turn progress belongs to statistics and chart/activity share the left work
     assert.ok(!doc.body.textContent!.includes("BTC"));
     assert.ok(!doc.body.textContent!.includes("Bitcoin"));
     assert.ok(!doc.body.textContent!.includes("₿"));
+    const navigation = [
+      ...doc.querySelectorAll<HTMLButtonElement>(".header-actions > button"),
+    ];
+    assert.deepEqual(
+      navigation.map(
+        (button) => button.textContent || button.getAttribute("aria-label"),
+      ),
+      ["How to play", "Statistics", "Settings", "Switch to light mode"],
+    );
+    assert.ok(
+      doc.querySelector(
+        '.instrument button[aria-label="About blind mode"] svg',
+      ),
+    );
+    assert.ok(
+      doc.querySelector(
+        '.chart-heading-actions button[aria-label="Expand chart width"]',
+      ),
+    );
+    assert.equal(
+      doc.querySelector(".chart-heading-actions .blind-badge"),
+      null,
+    );
     const workspace = doc.querySelector(".workspace")!;
     assert.equal(workspace.children.length, 2);
     assert.ok(workspace.children[0].matches(".left-panel"));

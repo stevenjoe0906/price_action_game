@@ -235,10 +235,14 @@ Charts use [TradingView Lightweight Charts](https://www.tradingview.com/lightwei
 
 ### Summary exports
 
-The game summary (including saved games and the current realized summary) provides **Share card**, **Download image**, and **Export CSVs**. The PNG card contains aggregate metrics and the completed-turn equity curve, without individual trades. Share card uses the native file-sharing sheet when supported; otherwise it downloads the image. Attach the PNG to X, Discord or Telegram yourself.
+The game summary (including saved games and the current realized summary) provides **Share card** and **Export CSVs**. Share card opens a modal image preview with separate Share and Download buttons; generating the PNG is deferred until the preview opens. The PNG card contains aggregate metrics and the completed-turn equity curve, without individual trades. The preview’s Share button uses the native file-sharing sheet when supported; Download saves a PNG file. iOS may open a file preview rather than saving to Photos: use Share → Save Image when offered, or touch and hold the card for image options. Websites cannot force saving directly into the photo album. Attach the PNG to X, Discord or Telegram yourself.
 
 CSV export requests two UTF-8 files: one game summary row and the full closed-trade list. Separate download links remain available if the browser blocks multiple downloads. Trade exports include UTC timestamps, normalized entry/final exit and quantity, gross/net P&L, fees, reason, and turn. Newly completed turns also record source factor and interval so CSVs can include real USDT prices and BTC quantity. Those columns are blank for older summaries without that metadata. Final exit is the final closing fill, rather than a weighted exit across partial closes; gross and net results include all closes. Turn-end drawdown measures completed-turn balances, rather than intraturn equity.
 
 All PNG/CSV generation happens in browser memory; exports make no server requests or server files.
 
 The borderless expand icon in the chart header hides the right pane and lets the left workspace fill the available width. The chart/activity split remains adjustable. Click again or press Escape to restore the default layout.
+
+The header actions are How to play, Statistics, Settings, and Theme; the first two show icons/text and the last two are icons only, all without borders. Blind-mode help is a question-mark icon beside the instrument, and the chart-width icon stays at the far right.
+
+Historical loading shares parsed raw archives across timeframes and deduplicates concurrent requests. Raw history is bounded to eight months in memory, with 64 aggregated interval/month entries. Long-interval history loads consecutive archives in batches of up to four, preserving month gaps and the 500–1,500 initial-candle rule. Short intervals request only the history they need. Loading messages show progress; actual startup time still depends on archive availability, server/network speed and the chosen interval.
