@@ -41,6 +41,11 @@
 * {
   box-sizing: border-box;
 }
+/* Prevent rubber-band page movement/pull-to-refresh without blocking scrolling. */
+html,
+body {
+  overscroll-behavior: none;
+}
 body {
   margin: 0;
   background: var(--bg);
@@ -2898,6 +2903,14 @@ select {
 }
 .left-panel.is-touch .chart-help-button {
   min-width: 44px;
+}
+.activity-content,
+.trading-sidebar,
+.chart-panel,
+.modal,
+.table-scroll,
+.chart-order-menu {
+  overscroll-behavior: none;
 }
 @media (max-width: 850px) {
   .app-shell .left-panel.is-touch {

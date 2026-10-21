@@ -126,6 +126,12 @@ Installation requires HTTPS, except for localhost development. Your Cloudflare-p
 
 This change provides installation support, not a full offline mode. No service worker preloads the historical-data archives or caches application versions. A network connection is still needed to load the app/data, and the active game is still discarded on reload. Existing browser-local settings/history may not carry over when installing through a different browser. After deployment, reload the HTTPS page before installing. The static server and container Nginx serve the manifest with the correct MIME type and revalidation headers.
 
+### Address bars and tablet overscroll
+
+The app requests standalone display, but a home-screen icon is not proof that the browser installed a standalone PWA. If Android still shows an address bar, check that you installed from the final HTTPS hostname and launch the installed app rather than a bookmark/shortcut. Redirecting to a different hostname or origin can cause a standalone app to show browser controls. Some browser/device combinations only create shortcuts; Chrome on devices without Google Mobile Services may do this too. A screenshot of the bar, the final URL, and device/browser versions are needed to distinguish these cases. Setting the manifest to fullscreen cannot force a normal browser shortcut to become a standalone app.
+
+The page and scroll-panel boundaries suppress overscroll bounce/pull-to-refresh with CSS while retaining scrolling within content and pinch zoom. This relies on browser support: older iPadOS Safari versions may still bounce, including a non-scrollable-page bug fixed in Safari 16.4. See [Apple's Safari 16.4 release notes](https://developer.apple.com/documentation/safari-release-notes/safari-16_4-release-notes).
+
 ## Game rules
 
 - A new game starts with **10,000 USDT**. Balance carries across **20 turns**. Liquidation ends the game immediately. There is no manual End Game button.
