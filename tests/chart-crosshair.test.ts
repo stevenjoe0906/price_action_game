@@ -69,11 +69,31 @@ test("price and bar guides survive every drawing tool, consumed events, editing,
     button.click();
   });
   const guides = () => doc.querySelector(".chart-crosshair");
+  const assertReadableLabels = () => {
+    const luminance = (color: string) => {
+      const channels = color.match(/[\d.]+/g)!.slice(0, 3).map(Number).map(value => {
+        const channel = value / 255;
+        return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+      });
+      return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
+    };
+    for (const selector of [".crosshair-price", ".crosshair-bar"]) {
+      const label = doc.querySelector(selector)!;
+      assert.ok(label.textContent?.trim(), selector + " contains a value");
+      const style = dom.window.getComputedStyle(label);
+      const foreground = luminance(style.color);
+      const background = luminance(style.backgroundColor);
+      const contrast = (Math.max(foreground, background) + 0.05) /
+        (Math.min(foreground, background) + 0.05);
+      assert.ok(contrast >= 4.5, selector + " must have readable text contrast");
+    }
+  };
   try {
     render();
     pointer(canvas, "pointermove", 200, 100);
     assert.equal(doc.querySelector(".crosshair-price")?.textContent, "90.0000");
     assert.equal(doc.querySelector(".crosshair-bar")?.textContent, "Bar 11");
+    assertReadableLabels();
     for (const name of ["Trendline", "Ray", "Horizontal line", "Vertical line", "Rectangle", "Price range / percentage ruler"]) {
       click(name);
       const overlay = doc.querySelector(".drawing-overlay")!;
@@ -103,6 +123,9 @@ test("price and bar guides survive every drawing tool, consumed events, editing,
     assert.equal(doc.querySelector(".crosshair-bar")?.textContent, "Bar 40");
     assert.equal(guides()?.querySelector("path")?.getAttribute("stroke"), CHART_THEMES.light.crosshair);
     assert.equal((doc.querySelector(".crosshair-price") as HTMLElement).style.fontSize, "21px");
+    assertReadableLabels();
+    render("dark");
+    assertReadableLabels();
     pane = { width: 400, height: 200 };
     render();
     assert.equal(guides(), null, "Resize hides an out-of-pane pointer");

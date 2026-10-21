@@ -86,7 +86,7 @@ export default function ChartCrosshair({
           left: pane.width,
           top: Math.max(fontSize, Math.min(pane.height - fontSize, pointer.y)),
           background: palette.label,
-          color: palette.text,
+          color: palette.labelText,
           fontSize,
         }}
       >
@@ -99,7 +99,7 @@ export default function ChartCrosshair({
           top: pane.height,
           maxWidth: pane.width,
           background: palette.label,
-          color: palette.text,
+          color: palette.labelText,
           fontSize,
           transform: x < 60 * textScale
             ? "none"
