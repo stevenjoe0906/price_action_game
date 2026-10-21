@@ -24,8 +24,6 @@ type Props = {
   series: ISeriesApi<"Candlestick"> | null;
   textScale: number;
   onInteract: () => void;
-  expanded: boolean;
-  onExpand: () => void;
   contextOpen?: boolean;
   onNavigationLock?: (locked: boolean) => void;
 };
@@ -75,8 +73,6 @@ export default function ChartDrawings({
   series,
   textScale,
   onInteract,
-  expanded,
-  onExpand,
   contextOpen = false,
   onNavigationLock,
 }: Props) {
@@ -641,19 +637,6 @@ export default function ChartDrawings({
           }}
         >
           <Glyph path="M3 10a9 9 0 1 1 2 8M3 3v7h7" />
-        </button>
-        <button
-          aria-label={expanded ? "Restore chart" : "Expand chart"}
-          title={expanded ? "Restore chart" : "Expand chart"}
-          onClick={onExpand}
-        >
-          <Glyph
-            path={
-              expanded
-                ? "M9 3v6H3m12-6v6h6M3 15h6v6m6 0v-6h6"
-                : "M3 9V3h6m6 0h6v6M3 15v6h6m6 0h6v-6"
-            }
-          />
         </button>
       </div>
       <svg

@@ -92,6 +92,27 @@ test("execution information is read-only in Settings and absent from the normal 
   try {
     act(() => root.render(createElement(TradingGame)));
     assert.ok(!doc.body.textContent!.includes(text));
+    const expand = doc.querySelector<HTMLButtonElement>(
+      'button[aria-label="Expand chart width"]',
+    )!;
+    act(() => expand.click());
+    assert.ok(doc.querySelector(".workspace.is-wide"));
+    assert.ok(
+      doc.querySelector(
+        'button[aria-label="Restore layout"][aria-pressed="true"]',
+      ),
+    );
+    assert.equal(
+      doc.querySelector('[role="separator"]')?.getAttribute("aria-disabled"),
+      "false",
+      "Width mode retains resizing",
+    );
+    act(() =>
+      dom.window.dispatchEvent(
+        new dom.window.KeyboardEvent("keydown", { key: "Escape" }),
+      ),
+    );
+    assert.equal(doc.querySelector(".workspace.is-wide"), null);
     act(() =>
       (
         doc.querySelector('button[aria-label="Settings"]') as HTMLButtonElement

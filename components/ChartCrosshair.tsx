@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import type { IChartApi, ISeriesApi, Logical } from "lightweight-charts";
+import { chartBar, chartPrice } from "@/lib/chart-display";
+import type { Candle } from "@/lib/engine";
 import { CHART_THEMES, type Theme } from "@/lib/theme";
 
 type Props = {
@@ -8,6 +10,8 @@ type Props = {
   series: ISeriesApi<"Candlestick"> | null;
   canvas: HTMLDivElement | null;
   anchor: number;
+  candles?: Candle[];
+  revealFactor?: number | null;
   theme: Theme;
   textScale: number;
   blocked?: boolean;
@@ -19,12 +23,15 @@ export default function ChartCrosshair({
   series,
   canvas,
   anchor,
+  candles = [],
+  revealFactor = null,
   theme,
   textScale,
   blocked = false,
   onInspectionChange,
 }: Props) {
   const [pointer, setPointer] = useState<{ x: number; y: number } | null>(null);
+  const [touchPending, setTouchPending] = useState(false);
   const [inspecting, setInspecting] = useState(false);
   const inspectionCallback = useRef(onInspectionChange);
   inspectionCallback.current = onInspectionChange;
@@ -58,6 +65,7 @@ export default function ChartCrosshair({
       release();
       if (mode) setMode(false);
       setPointer(null);
+      setTouchPending(false);
     };
     const position = (event: PointerEvent, clamp = false) => {
       const bounds = canvas.getBoundingClientRect();
@@ -102,7 +110,7 @@ export default function ChartCrosshair({
       if (mode) {
         event.preventDefault();
         surface.setPointerCapture?.(event.pointerId);
-        setPointer(position(event));
+        setTouchPending(true);
       }
     };
     const move = (event: PointerEvent) => {
@@ -111,8 +119,9 @@ export default function ChartCrosshair({
           gesture.moved ||=
             Math.hypot(event.clientX - gesture.x, event.clientY - gesture.y) >
             8;
-          if (mode && !gesture.multi) {
+          if (mode && !gesture.multi && gesture.moved) {
             event.preventDefault();
+            setTouchPending(false);
             setPointer(position(event, true));
           }
         }
@@ -130,6 +139,7 @@ export default function ChartCrosshair({
         !gesture.moved &&
         Math.hypot(event.clientX - gesture.x, event.clientY - gesture.y) <= 8;
       release();
+      setTouchPending(false);
       if (tap) {
         const p = position(event);
         if (!p) return;
@@ -197,51 +207,53 @@ export default function ChartCrosshair({
           aria-label="Crosshair inspection: drag to inspect, tap to resume chart panning"
         />
       )}
-      <div className="chart-crosshair" aria-hidden="true">
-        <svg width={pane.width} height={pane.height}>
-          <path
-            d={`M0 ${pointer.y}H${pane.width} M${x} 0V${pane.height}`}
-            fill="none"
-            stroke={palette.crosshair}
-            strokeWidth="1"
-            strokeDasharray="2 3"
-          />
-        </svg>
-        <span
-          className="crosshair-price"
-          style={{
-            left: pane.width,
-            top: Math.max(
+      {!touchPending && (
+        <div className="chart-crosshair" aria-hidden="true">
+          <svg width={pane.width} height={pane.height}>
+            <path
+              d={`M0 ${pointer.y}H${pane.width} M${x} 0V${pane.height}`}
+              fill="none"
+              stroke={palette.crosshair}
+              strokeWidth="1"
+              strokeDasharray="2 3"
+            />
+          </svg>
+          <span
+            className="crosshair-price"
+            style={{
+              left: pane.width,
+              top: Math.max(
+                fontSize,
+                Math.min(pane.height - fontSize, pointer.y),
+              ),
+              background: palette.label,
+              color: palette.labelText,
               fontSize,
-              Math.min(pane.height - fontSize, pointer.y),
-            ),
-            background: palette.label,
-            color: palette.labelText,
-            fontSize,
-          }}
-        >
-          {price.toFixed(4)}
-        </span>
-        <span
-          className="crosshair-bar"
-          style={{
-            left: x,
-            top: pane.height,
-            maxWidth: pane.width,
-            background: palette.label,
-            color: palette.labelText,
-            fontSize,
-            transform:
-              x < 60 * textScale
-                ? "none"
-                : x > pane.width - 60 * textScale
-                  ? "translateX(-100%)"
-                  : "translateX(-50%)",
-          }}
-        >
-          Bar {barIndex - anchor + 1}
-        </span>
-      </div>
+            }}
+          >
+            {chartPrice(price, revealFactor)}
+          </span>
+          <span
+            className="crosshair-bar"
+            style={{
+              left: x,
+              top: pane.height,
+              maxWidth: pane.width,
+              background: palette.label,
+              color: palette.labelText,
+              fontSize,
+              transform:
+                x < 60 * textScale
+                  ? "none"
+                  : x > pane.width - 60 * textScale
+                    ? "translateX(-100%)"
+                    : "translateX(-50%)",
+            }}
+          >
+            {chartBar(barIndex, anchor, candles, revealFactor !== null)}
+          </span>
+        </div>
+      )}
     </>
   );
 }

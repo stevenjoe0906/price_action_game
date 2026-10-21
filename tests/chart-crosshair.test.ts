@@ -48,7 +48,7 @@ test("price and bar guides survive every drawing tool, consumed events, editing,
   const render = (theme: "dark" | "light" = "dark", scale = 1, anchor = 10) => act(() => root.render(
     createElement("div", {},
       createElement(ChartDrawings, {
-        chart, series, textScale: scale, onInteract: () => {}, expanded: false, onExpand: () => {},
+        chart, series, textScale: scale, onInteract: () => {},
       }),
       createElement(ChartCrosshair, { chart, series, canvas, anchor, theme, textScale: scale }),
     ),

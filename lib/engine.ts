@@ -57,6 +57,9 @@ export type Fill = {
   fee: number;
 };
 export type Turn = {
+  /** Source conversion metadata; absent in older saved games. */
+  factor?: number;
+  interval?: string;
   number: number;
   net: number;
   fees: number;

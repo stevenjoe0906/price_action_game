@@ -14,6 +14,7 @@ import {
   type IPriceLine,
   type UTCTimestamp,
 } from "lightweight-charts";
+import { chartPrice, chartTime } from "@/lib/chart-display";
 import ChartDrawings from "./ChartDrawings";
 import ChartCrosshair from "./ChartCrosshair";
 import { createChartNavigation } from "@/lib/chart-navigation";
@@ -29,6 +30,7 @@ import type { ChartLine } from "@/lib/chart-lines";
 export type { ChartLine } from "@/lib/chart-lines";
 type Props = {
   candles: Candle[];
+  revealFactor?: number | null;
   lines: ChartLine[];
   fills: Fill[];
   anchor: number;
@@ -39,13 +41,12 @@ type Props = {
   onDragStart: () => void;
   textScale: number;
   theme: Theme;
-  expanded: boolean;
-  onExpand: () => void;
   canTrade: boolean;
   onPrepareOrder: (side: Side, type: ChartOrderType, price: number) => void;
 };
 export default function PriceChart({
   candles,
+  revealFactor = null,
   lines,
   fills,
   anchor,
@@ -56,8 +57,6 @@ export default function PriceChart({
   onDragStart,
   textScale,
   theme,
-  expanded,
-  onExpand,
   canTrade,
   onPrepareOrder,
 }: Props) {
@@ -85,6 +84,8 @@ export default function PriceChart({
   const priceLines = useRef(new Map<string, IPriceLine>());
   const dataRef = useRef(candles);
   dataRef.current = candles;
+  const revealRef = useRef(revealFactor);
+  revealRef.current = revealFactor;
   const anchorRef = useRef(anchor);
   anchorRef.current = anchor;
   const callbacks = useRef({ onLine, onLinePreview, onDragStart });
@@ -115,11 +116,26 @@ export default function PriceChart({
         setDragging(null);
       },
     });
+  useEffect(() => {
+    const timeFormatter = (time: unknown) => {
+      if (revealFactor) return chartTime(Number(time));
+      const index = dataRef.current.findIndex((b) => b.time === Number(time));
+      return `Bar ${index - anchorRef.current + 1}`;
+    };
+    api.current?.applyOptions({
+      localization: {
+        priceFormatter: (p: number) => chartPrice(p, revealFactor),
+        timeFormatter,
+      },
+      timeScale: { tickMarkFormatter: timeFormatter },
+    });
+  }, [revealFactor]);
   const count = useRef(0);
   const firstTime = useRef(0);
   useEffect(() => {
     if (!container.current) return;
     const relativeTime = (time: unknown) => {
+      if (revealRef.current) return chartTime(Number(time));
       const index = dataRef.current.findIndex((b) => b.time === Number(time));
       return `Bar ${index - anchorRef.current + 1}`;
     };
@@ -153,7 +169,7 @@ export default function PriceChart({
       },
       localization: {
         timeFormatter: relativeTime,
-        priceFormatter: (p: number) => p.toFixed(4),
+        priceFormatter: (p: number) => chartPrice(p, revealRef.current),
       },
       crosshair: {
         mode: CrosshairMode.Normal,
@@ -411,8 +427,6 @@ export default function PriceChart({
           series={series.current}
           textScale={textScale}
           onInteract={onDragStart}
-          expanded={expanded}
-          onExpand={onExpand}
           contextOpen={canTrade && context !== null}
           onNavigationLock={drawingNavigation}
         />
@@ -421,6 +435,8 @@ export default function PriceChart({
           series={series.current}
           canvas={container.current}
           anchor={anchor}
+          candles={candles}
+          revealFactor={revealFactor}
           theme={theme}
           textScale={textScale}
           blocked={drawingLocked || dragging !== null || context !== null}

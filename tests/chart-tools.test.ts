@@ -110,8 +110,6 @@ test("drawing toolbar places, previews, edits, hides, deletes, undoes, and measu
           onInteract: () => {
             pauses++;
           },
-          expanded: false,
-          onExpand: () => {},
         }),
       ),
     );

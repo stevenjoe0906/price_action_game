@@ -118,7 +118,20 @@ test("touch tap toggles inspection, drag moves guides without panning, and exit 
     assert.equal(doc.querySelector(".crosshair-bar")?.textContent, "Bar 21");
     act(() => surface.dispatchEvent(new dom.window.Event("pointerleave")));
     assert.ok(target(), "Crosshair remains after the finger lifts/leaves");
-    tap(target(), 300, 150);
+    pointer(target(), "pointerdown", 120, 90);
+    assert.equal(
+      doc.querySelector(".chart-crosshair"),
+      null,
+      "Exit tap hides guides immediately instead of moving them",
+    );
+    assert.ok(target(), "Capture target stays mounted through pointer release");
+    pointer(surface, "pointermove", 122, 91);
+    assert.equal(
+      doc.querySelector(".chart-crosshair"),
+      null,
+      "Small tap jitter does not move or restore guides",
+    );
+    pointer(surface, "pointerup", 122, 91);
     assert.equal(locked, false);
     assert.equal(doc.querySelector(".chart-crosshair"), null);
     pointer(canvas, "pointerdown", 100, 100);

@@ -1,5 +1,7 @@
 "use client";
 import dynamic from "next/dynamic";
+import SummaryExport from "./SummaryExport";
+import { chartPrice } from "@/lib/chart-display";
 import ResizableChartPanels from "./ResizableChartPanels";
 import { useTouchLayout } from "@/lib/use-touch-layout";
 import PositionProtection from "./PositionProtection";
@@ -280,6 +282,17 @@ export default function TradingGame() {
   const speedRef = useRef(speed);
   speedRef.current = speed;
   const commit = useCallback((g: Game) => {
+    if (g.status !== "active" && sessionRef.current) {
+      const market = sessionRef.current;
+      g = {
+        ...g,
+        turns: g.turns.map((turn) =>
+          turn.number === g.turn
+            ? { ...turn, factor: market.factor, interval: market.interval }
+            : turn,
+        ),
+      };
+    }
     gameRef.current = g;
     setGame(g);
     if (g.notice) setToast(g.notice);
@@ -884,15 +897,13 @@ export default function TradingGame() {
           </button>
         </div>
       )}
-      <div className="workspace">
+      <div className={`workspace ${chartExpanded ? "is-wide" : ""}`}>
         <ResizableChartPanels
-          expanded={chartExpanded}
+          expanded={false}
           touchLayout={touchLayout}
           activityVisible={activityVisible}
         >
-          <section
-            className={`chart-panel panel ${chartExpanded ? "is-expanded" : ""}`}
-          >
+          <section className="chart-panel panel">
             <div className="chart-heading">
               <div className="instrument">
                 <span
@@ -916,35 +927,87 @@ export default function TradingGame() {
                   {session?.interval ?? settings.interval}
                 </span>
               </div>
-              <div
-                className="blind-badge"
-                tabIndex={0}
-                aria-describedby="blind-mode-help"
-              >
-                <Icon name="shield" size={14} />
-                <span>Blind mode</span>
-                <span className="tooltip" id="blind-mode-help" role="tooltip">
-                  Prices normalized to 100. Dates hidden. Symbol revealed after
-                  the turn.
-                </span>
+              <div className="chart-heading-actions">
+                <button
+                  className="chart-width-button"
+                  aria-label={
+                    chartExpanded ? "Restore layout" : "Expand chart width"
+                  }
+                  title={
+                    chartExpanded ? "Restore layout" : "Expand chart width"
+                  }
+                  aria-pressed={chartExpanded}
+                  onClick={() => setChartExpanded((v) => !v)}
+                >
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d={
+                        chartExpanded
+                          ? "M9 3v6H3m12-6v6h6M3 15h6v6m6 0v-6h6"
+                          : "M3 9V3h6m6 0h6v6M3 15v6h6m6 0h6v-6"
+                      }
+                    />
+                  </svg>
+                </button>
+                <div
+                  className="blind-badge"
+                  tabIndex={0}
+                  aria-describedby="blind-mode-help"
+                >
+                  <Icon name="shield" size={14} />
+                  <span>{revealSymbol ? "Market revealed" : "Blind mode"}</span>
+                  <span className="tooltip" id="blind-mode-help" role="tooltip">
+                    Prices and dates are hidden during play and revealed after
+                    the turn.
+                  </span>
+                </div>
               </div>
             </div>
             <div className="ohlc-bar">
               {last ? (
                 <>
                   <span>
-                    O <b>{price(last.open)}</b>
+                    O{" "}
+                    <b>
+                      {chartPrice(
+                        last.open,
+                        revealSymbol ? session?.factor : null,
+                      )}
+                    </b>
                   </span>
                   <span>
-                    H <b>{price(last.high)}</b>
+                    H{" "}
+                    <b>
+                      {chartPrice(
+                        last.high,
+                        revealSymbol ? session?.factor : null,
+                      )}
+                    </b>
                   </span>
                   <span>
-                    L <b>{price(last.low)}</b>
+                    L{" "}
+                    <b>
+                      {chartPrice(
+                        last.low,
+                        revealSymbol ? session?.factor : null,
+                      )}
+                    </b>
                   </span>
                   <span>
                     C{" "}
                     <b className={tone(last.close - last.open)}>
-                      {price(last.close)}
+                      {chartPrice(
+                        last.close,
+                        revealSymbol ? session?.factor : null,
+                      )}
                     </b>
                   </span>
                   <span className="bar-count">
@@ -963,6 +1026,7 @@ export default function TradingGame() {
               <PriceChart
                 key={session?.cursor}
                 candles={candles}
+                revealFactor={revealSymbol ? session?.factor : null}
                 lines={lines}
                 fills={
                   game?.fills
@@ -984,8 +1048,6 @@ export default function TradingGame() {
                 }}
                 textScale={DISPLAY_SIZES[settings.displaySize]}
                 theme={settings.theme}
-                expanded={chartExpanded}
-                onExpand={() => setChartExpanded((v) => !v)}
                 canTrade={active && !loading}
                 onPrepareOrder={prepareChartOrder}
               />
@@ -1945,6 +2007,7 @@ function SummaryView({
     .join(" ");
   return (
     <>
+      <SummaryExport summary={s} />
       <div className="summary-top">
         <div>
           <span>

@@ -2789,7 +2789,9 @@ select {
   border-top: 1px solid var(--border);
   cursor: pointer;
 }
-.chart-indicators input { accent-color: var(--accent); }
+.chart-indicators input {
+  accent-color: var(--accent);
+}
 
 /* Crosshair guides never intercept drawing, dragging, or chart navigation. */
 .chart-crosshair {
@@ -2983,4 +2985,67 @@ select {
   .app-shell .left-panel.is-touch {
     height: max(28rem, 70dvh);
   }
+}
+
+/* Width mode keeps the chart/activity split and its bottom edge in place. */
+.app-shell .workspace.is-wide {
+  grid-template-columns: minmax(0, 1fr);
+}
+.workspace.is-wide > .trading-sidebar {
+  display: none;
+}
+.chart-heading-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.chart-width-button {
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  flex-shrink: 0;
+}
+.chart-width-button:hover {
+  color: var(--text);
+}
+.left-panel.is-touch .chart-width-button {
+  width: 44px;
+  height: 44px;
+}
+.left-panel.is-touch .playback-buttons button,
+.left-panel.is-touch .playback-buttons select {
+  box-sizing: border-box;
+  height: 44px;
+  min-height: 44px;
+}
+.left-panel.is-touch .playback-buttons select {
+  appearance: none;
+  -webkit-appearance: none;
+  line-height: normal;
+  min-width: 92px;
+  padding: 0 25px 0 10px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='m1 1 4 4 4-4' fill='none' stroke='%23839096'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 9px center;
+}
+.summary-export {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.summary-export p {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+.summary-export a {
+  color: var(--accent);
 }
