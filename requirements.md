@@ -1,124 +1,126 @@
-A trading training game
+# Price Action Training Game
 
-# 1. Module:
-1. Price charts capture
-2. Order manager
-3. User settings
-4. Summary and statistics
+This specification incorporates the decisions agreed on October 20, 2026. The implementation and README document execution details.
 
-# 2. Price Charts Capture
+## Platform and data
 
-1. Choose a random accurate time as the start time, for example 2024-10-07 12:05
-2. Get the interval from user settings
-3. Capture up to 1500 candles before this time, are there any recommended libraries to capture the price charts?
-4. The start time less than current and larger than 2022-01-01 00:00(hard code). If candels less than 500, change a start time.
-5. The chart hides the real price, for example, BTC price is 74392, don't display this price. The close price of the last candle is 100, then calculate others' open and close price
-6. If possible, use Trading View as the chart provider
+- A browser-based website optimized for desktop, also usable on smaller screens. Use the full page width, a chart-first viewport-height layout, and a focused expand-chart mode.
+- Next.js, TypeScript, React, pnpm; Docker is optional.
+- All trading and accounting run locally in the browser. No application backend, authentication, or API keys.
+- Free Binance BTCUSDT USD-M perpetual futures OHLC data. TradingView Lightweight Charts renders the chart; it does not supply the market data.
+- Prefer an installed static historical-data pack, downloaded from Binance's public monthly archive. Support direct free Binance REST access when no pack exists. Network failures must be visible; never invent substitute candles.
+- Historical pack setup is a download script, not a running backend. Serve the generated static website on localhost or the user's server.
 
-## 2.1 User Operations of Price Chart:
+## Game and turns
 
-1. Play: Play candles automatically, 1 candel per second, user can pause and resume the play. There is dropdown menu to adjust the speed, options: 1x, 2x, 5x, 10x, 20x
-2. Next: Show the next candle, user can click this button to show the next candle. Long press or press down right arrow key to show candles continuously, 5 candels per second, user can release to stop the continuous show
-3. Finish: Show all remaining candles, up to 300. This is a one-time operation, user can click this button to show all remaining candles, and this turn is over. User can start a new turn
-4. Repick: Repick a new start time, and capture new candles. If user has already placed an order, whatever the order status is, the repick operation will be disabled forever, until the user starts a new turn
+- A game starts with a fixed **10,000 USDT** balance, carrying across **20 turns**.
+- The game ends after turn 20 or immediately on liquidation. No manual End Game action.
+- Initially show no chart; provide Start New Game.
+- Each turn chooses a random historical start at or after **2022-01-01 00:00 UTC**, before the latest available fully closed candle.
+- Load up to **1,500 initial candles**. If fewer than **500** are available, repick.
+- Normalize every OHLC value by one fixed multiplier so the last initial close is **100**. Use the same scale throughout that turn. Hide calendar dates to support blind practice. Hide the market symbol and asset icon before the game starts and during active turns; reveal them only when the turn ends. Remove the separate introductory slogan area.
+- There is **no fixed future-candle limit**. Do not reveal future candles after a turn ends.
+- **Finish Turn** cancels every pending order, including stop entries, and closes the position at the last displayed close, with applicable slippage and fees. No future candle is used.
+- Reaching the latest closed API candle or the end of the installed historical pack automatically finishes the turn.
+- **Repick** changes the start time without ending the turn. It locks after any successful order submission, regardless of later cancellation or fill status, until the next turn.
+- Users can trade as many times as they wish during a turn. There is no performance-based automatic turn limit.
 
-# 3. Order Manager
+## Chart controls
 
-## 3.1 User Operations of Order Manager:
+- Play/pause, default one candle per second.
+- Speeds: **1x, 2x, 5x, 10x, 20x**.
+- Next reveals one candle immediately; holding Next or Right Arrow repeats at the selected replay speed, matching Play (1× = one candle per second). Releasing stops it.
+- Space toggles playback; controls do not interfere with typing in inputs.
+- Show draggable entry, SL, and optional TP lines after Start Trading. Support dragging anywhere along the line, with live line, price-axis label, and input updates. Pause replay while dragging, validate protection on release, and let Escape cancel.
+- Permit zooming and panning. Future candles must not affect the visible chart or its price scale.
 
-1. Supports stop market order, limit order and market order, use a tab switcher to switch between them
-2. A Long button and a Short button
-3. The user can adjust the stop price manually
-4. A stop loss order is required for each trade, and the user can adjust the stop loss price manually
-5. The position size is automatically calculated based on the user's account balance and risk percentage, which can be set in user settings. User can not adjust the position size manually.
-6. User can adjust the leverage, options: 2x, 3x, 5x, 10x
-7. Initially, the order manager doesn't display any order operations, just a button with text start trading, when the user clicks this button, the order manager will display the order operations, and provide three horizontal lines on price charts, one for stop price, one for stop loss price, and one for take profit price. The user can drag these lines to adjust the prices.
-8. Only cross margin is supported
-9. Fee: 0.05% for maker and taker, the fee is deducted from the account balance when the order is filled
-10. Slippage: 0.01%
+## Chart context menu
 
-## 3.2 Open Interest
+- Right-click during an active turn to prepare orders at the clicked chart-price level. Above market: sell limit, buy stop-market, buy stop-limit. Below market: buy limit, sell stop-market, sell stop-limit.
+- Selecting an item opens the ticket and sets direction, order type, entry/trigger, SL, TP, and a stop-limit limit when applicable. Do not submit an order automatically. Use the same 0.5% SL / 1% TP default distances as Start Trading, with risk-based size.
+- Stop-limit orders activate on trigger and then fill only at their limit or better. Gap triggers can remain unfilled. Size/reserve margin from the limit, expose the limit field, and show triggered status in pending orders.
+- Hide the symbol in the menu, pause replay, dismiss with Escape/outside click, and keep the menu inside chart bounds.
 
-1. Long or Short
-2. Leverage
-3. Position Size
-4. Unrealized PnL
-5. Entry Price
-6. Last Price
-7. Liquidation Price
-8. Stop Loss Price
-9. Take Profit Price
+## Drawing toolbar
 
-If user resizes the position, calculate and update the status automatically
+- Provide a free custom toolbar on the chart: select, trendline, ray, horizontal/vertical lines, rectangle, and a percentage/price-change ruler.
+- Support drag-to-draw or two-point placement, live previews, selecting/moving drawings, endpoint editing, and colors.
+- Keep drawings anchored to chart coordinates through pan, zoom, resize, and candle replay. Drawings must not influence orders or expose future candles.
+- Support hide/show, delete/clear, undo/redo, cancellation, reset view, and chart expansion. Drawings reset with a new chart/turn.
+- This is a custom toolbar on Lightweight Charts; the proprietary TradingView Advanced Charts toolbar is not a dependency.
 
-## 3.3 Position Manager
+## Orders, risk, and position management
 
-1. Close Position: 25% of the position, 50% of the position, 75% of the position, 100% of the position
-2. Modify Take Profit Price: When user clicks this button, he can drag the take profit line on the price chart or write a new price manually to modify the take profit price
-3. Modify Stop Loss Price: Same to above
+- Order tabs: Stop market, Stop limit, Market, Limit. Default new/reset tickets to Stop market; support long and short directions.
+- **SL is required** for every entry to calculate risk-based size. Once filled, position SL and TP can each be canceled, re-added, or modified. TP is optional, and liquidation remains active without SL.
+- Calculate quantity automatically: **account balance x risk percentage / absolute entry-to-SL distance**. Do not include fees or slippage in the risk budget; market sizing uses the executable slipped entry.
+- Users cannot directly edit quantity. Default risk **1%**, adjustable in settings.
+- Cross margin only; leverage choices **2x, 3x, 5x, 10x**.
+- Reject and warn when an order exceeds available margin. Reserve margin conservatively for pending orders and recheck at execution.
+- Hold only one net directional position. Opposite orders first reduce/close it, then open the excess in the opposite direction.
+- Adding in the same direction uses weighted average entry and the latest order's SL, TP, and leverage for the combined position.
+- Manual closes: **25%, 50%, 75%, 100%** of the remaining position.
+- Modify SL and TP by dragging chart lines or entering prices. Moving SL farther away is permitted.
+- Show side, leverage, quantity, unrealized PnL, entry, last, liquidation, SL, and TP.
+- Show pending orders with cancellation controls, and executed-fill history.
 
-# 4. User settings
+## Simplified execution
 
-1. Balance. Default to 10000 USDT, user cannot adjust this value.
-2. Risk percentage. Default to 1%, user can adjust this value. It indicates the percentage of the account balance that the user is willing to risk on a single trade.
-3. Candle interval. Default to 5 minutes, user can adjust this value. Options: 5 minutes, 15 minutes, 30 minutes, 1 hour, 4 hours, 1 day
+- Fee: **0.05%** per executed fill, maker and taker, deducted from balance immediately.
+- Adverse slippage: **0.01%** for market and stop-market execution, including SL and forced/manual exits. No market slippage on limit/TP fills.
+- Omit funding payments.
+- **SL first** when a candle touches both SL and TP. Newly filled entries use the entire candle range conservatively because the true intrabar path is unknown.
+- Opening gaps fill stops at the worse opening price; limits may receive opening-price improvement.
+- A documented simplified cross-margin liquidation model is acceptable: fixed **0.5% maintenance margin**, candle price instead of mark price, no exchange margin tiers. Liquidation ends the game.
 
-# 5. Page Overview
+## Settings and persistence
 
-## Page Top
+- Fixed starting balance: 10,000 USDT, reset on every new game.
+- Risk default 1%; intervals: **5m, 15m, 30m, 1h, 4h, 1d**, default 5m.
+- New interval selection applies to the next chart, without replacing an active chart mid-position.
+- Provide a persistent Light/Dark switch affecting the interface, native chart, and drawing colors.
+- Provide readable default typography and persistent -50%, -30%, -15%, default, +15%, +30%, and +50% display-size preferences, including chart labels.
+- Save settings and at most **10 completed-game summaries** in local browser storage.
+- **Do not save active games**. Refreshing/closing the page discards the active game.
 
-Left:
+## Layout and statistics
 
-- Balance
-- Realized PnL of this game, Unrealized PnL of this game
-- Progress bar of this game
-- Win Rate of this game
-- Trade Count of this game
-- Fee
+- Left column: chart above a scrollable orders/activity panel. Right column: order ticket, position management, and current-turn metrics. Both columns fill the remaining browser height; use natural header/statistics heights rather than fixed viewport offsets. Resize automatically, with independent scrolling for overflow and stacked columns on narrow screens.
+- One statistics strip contains balance, game realized/unrealized PnL, turn count/progress, win rate, closed trade count, and fees. Do not show a separate turn-progress area.
+- Settings and summary/history controls in the header. Remove the page footer; show simulated-execution/slippage/no-funding information read-only inside Settings. Preserve the native TradingView chart logo and include an attribution link in Chart help.
+- Current-turn realized/unrealized PnL and fees.
+- Summary: final balance, net return, win rate, fees, profit factor, per-turn balance plot and results, and closed-trade review.
+- Fully closed position cycles count as trades; partial closes remain in the same trade. Win rate uses net results after fees. Label drawdown as measured at turn end.
 
-Right:
+- On desktop, both columns must fill the remaining viewport height before and during games. Initial activity height is 400px (reduced only when the viewport is too short); the chart takes the rest. Dragging changes the split without moving either column’s bottom. Contain empty/loading/chart overlays within their pane. A draggable horizontal divider between the chart and Orders & activity lets users adjust their heights, with minimum pane heights, keyboard adjustment, Escape cancellation, and double-click/Enter reset. Keep the split across turns in the current page session and adapt it to window resizing.
 
-1. User settings button
-2. Summary and statistics button(To view the summary and statistics of the game)
+- Order ticket cancel: × on the draft entry/trigger line and ticket header hides all draft lines and resets the ticket, leaving submitted orders and positions intact. Successful submission also resets the ticket.
+- Display every pending entry and attached SL/TP on the chart, with order ID, side, type, quantity, and any stop-limit limit price. An entry-line × cancels that pending order and removes its lines. Show one weighted average entry line for the net position.
+- Position SL/TP each cover the full remaining position; newest same-direction fill replaces both. Allow independent cancellation from chart/sidebar, re-adding via price fields, and modification through fields or dragging. Required entry SL sizing does not prevent canceling the position SL after execution.
 
-## Page Left
+- Missing position exits expose Add SL/Add TP in the padded sidebar and SL/TP buttons beside the average-entry chart label. Restore valid defaults from the current market without submitting a new entry; allow custom prices with inline directional validation. Chart text and action buttons must occupy separate non-overlapping slots outside the price axis.
 
-Price Chart: As big as possible
+- Position SL/TP action labels must track live drag previews on every pointer move and restore on cancellation, matching the native line and price field. Use a faint neutral current-price guide, distinct from order/protection lines in both themes. Play and held Next/Right Arrow share the selected 1×–20× multiplier, including speed changes during a hold; Next still advances immediately on press.
 
-## Page Right
+- Use a linear price scale and uniform native time-tick distribution; retain axis-aligned adaptive grid lines when zooming.
+- Add an Indicators control with EMA 20 enabled by default and a show/hide checkbox. Calculate from revealed closes only, update incrementally during replay, and rebuild on chart changes. No TradingView.com indicator catalog or Pine integration is required.
 
-- Order Manager
-- Open Interest
-- Order Delegation
-- Game Status:
- - Unrealized PnL of this turn
- - Realized PnL of this turn 
- - Fee of this turn
+## Issue #9 interface refinements
 
-# 6. Steps of the game
+- Keep the Blind mode tooltip above the OHLC row and chart, with keyboard-focus support.
+- Put Finish turn and the subsequent Next turn/New game actions below the sidebar current-turn metrics on every device.
+- Playback toolbar order: Play, Next, Speed, Repick, question-mark Chart help button. Replace the chart-footer row with the help dialog.
+- Only on touch-capable devices, initially hide Orders & activity and provide a Chart/Orders & activity switch at the right of the replay toolbar. Keep that toolbar visible in either pane and preserve chart/drawing state. Keep the existing draggable split on mouse-only computers regardless of viewport width.
 
-## 6.1 Concepts
+## Installable web app
 
-- A Turn: A single trading session where the user can place trades based on the captured price charts. Each turn starts with a new random start time and a fresh set of candles. If user click the Finish button, the turn will end and user can start a new turn. If user click the Repick button, the turn will not end.
-- A Game: 20 turns, the user can play 20 turns in a game. After 20 turns, the game ends and the user can see the summary and statistics of their performance.
+- Provide a statically exported web-app manifest with standalone display mode, root scope/start URL, 192px/512px PNG icons, a maskable icon, and Apple home-screen metadata/icon.
+- Support installation through compatible Android, iPad, and desktop browsers over HTTPS. Browser support determines whether installation produces a standalone app or a normal shortcut.
+- Retain free screen rotation, pinch zoom, and existing touch layout. Installation does not add offline caching or active-game persistence.
 
-NOTE:
-1. User can trading in a turn many times, free to open and close positions, but the turn will end when user click the Finish button. User can start a new turn after the turn ends.
-2. If user encountered liquidation, the game will end immediately, and user can see the summary and statistics of their performance. 
+## Issue #10 chart and compact controls
 
-## 6.2 Steps
-
-1. User open the website
-2. No chart at default. User can click a button to start a new game
-3. User trading in a turn or start a new turn
-4. After 20 turns, user encounters liquidation, or user click the Finish button, the game ends and user can see the summary and statistics of their performance
-
-NOTE:
-- You design the summary page
-- There are some details I didn't mention above, please refer to Trading View or mainstream exchanges for reference, and design the game reasonably
-- This is a totally local game, no backend, just fetch price charts from Trading View or other chart providers, and all the trading operations are simulated locally
-- Record summary for up to 10 games
-
-# Tech Stacks
-
-Nextjs, pnpm, docker(if required)
+- Match Repick to Next's outlined style and the speed dropdown to its border; make Chart help a ghost icon button.
+- Use one compact statistics row labeled Progress, Balance, PnL, uPnL, Win rate, Trades, Fees. Remove the progress bar and horizontally scroll the row on narrow screens.
+- Allow vertical and horizontal plot dragging from the first drag without manually dragging the price axis. Reset view restores automatic fitting.
+- On touch, a plot tap shows persistent price/bar crosshairs and changes dragging to crosshair inspection. A second tap hides the guides and restores ordinary panning. Keep drawing/order editing, mouse crosshairs, and multi-touch gestures separate from tap detection.
