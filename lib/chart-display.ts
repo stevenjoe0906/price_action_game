@@ -18,3 +18,26 @@ export function chartBar(
   if (!reveal) return `Bar ${index - anchor + 1}`;
   return candles[index] ? chartTime(candles[index].time) : "";
 }
+
+/** Compact UTC axis ticks; the crosshair retains the full timestamp. */
+export function chartTimeTick(time: number, type: number) {
+  const date = new Date(time * 1000);
+  if (type === 0) return String(date.getUTCFullYear());
+  if (type === 1)
+    return [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ][date.getUTCMonth()];
+  if (type === 2) return String(date.getUTCDate());
+  return date.toISOString().slice(11, type === 4 ? 19 : 16);
+}

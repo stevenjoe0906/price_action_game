@@ -66,6 +66,7 @@ export type Fill = {
 export type Turn = {
   /** Source conversion metadata; absent in older saved games. */
   factor?: number;
+  symbol?: "BTCUSDT" | "ETHUSDT";
   interval?: string;
   number: number;
   net: number;

@@ -297,7 +297,12 @@ export default function TradingGame() {
         ...g,
         turns: g.turns.map((turn) =>
           turn.number === g.turn
-            ? { ...turn, factor: market.factor, interval: market.interval }
+            ? {
+                ...turn,
+                factor: market.factor,
+                interval: market.interval,
+                symbol: market.symbol ?? "BTCUSDT",
+              }
             : turn,
         ),
       };
@@ -402,7 +407,12 @@ export default function TradingGame() {
           if (market)
             ended.turns = ended.turns.map((turn) =>
               turn.number === ended.turn
-                ? { ...turn, factor: market.factor, interval: market.interval }
+                ? {
+                    ...turn,
+                    factor: market.factor,
+                    interval: market.interval,
+                    symbol: market.symbol ?? "BTCUSDT",
+                  }
                 : turn,
             );
           const archive = { ...summarize(ended), restarted: true };
@@ -892,7 +902,13 @@ export default function TradingGame() {
                 <span
                   className={`bitcoin ${!revealSymbol ? "hidden-symbol" : ""}`}
                 >
-                  {!revealSymbol ? <Icon name="shield" size={20} /> : "₿"}
+                  {!revealSymbol ? (
+                    <Icon name="shield" size={20} />
+                  ) : session?.symbol === "ETHUSDT" ? (
+                    "Ξ"
+                  ) : (
+                    "₿"
+                  )}
                 </span>
                 <div>
                   <strong>
@@ -900,7 +916,8 @@ export default function TradingGame() {
                       <>Hidden market</>
                     ) : (
                       <>
-                        BTC <span>/ USDT</span>
+                        {session?.symbol === "ETHUSDT" ? "ETH" : "BTC"}{" "}
+                        <span>/ USDT</span>
                       </>
                     )}
                   </strong>
@@ -1008,7 +1025,7 @@ export default function TradingGame() {
             </div>
             {candles.length ? (
               <PriceChart
-                key={session?.cursor}
+                key={`${session?.symbol ?? "BTCUSDT"}-${session?.cursor}`}
                 candles={candles}
                 revealFactor={revealSymbol ? session?.factor : null}
                 lines={lines}
@@ -1567,34 +1584,28 @@ export default function TradingGame() {
                 ]),
               )}
             />
-            <div className="turn-actions">
-              {game?.status === "turn-ended" ? (
-                <button
-                  className="primary-button"
-                  disabled={loading}
-                  onClick={() => void loadTurn("next")}
-                >
-                  Next turn <Icon name="arrow" size={16} />
-                </button>
-              ) : game?.status === "finished" ? (
-                <button
-                  className="primary-button"
-                  disabled={loading}
-                  onClick={() => void loadTurn("new")}
-                >
-                  New game <Icon name="arrow" size={16} />
-                </button>
-              ) : (
-                <button
-                  className="finish-button sidebar-action"
-                  disabled={!active || loading}
-                  onClick={finish}
-                >
-                  <Icon name="flag" size={15} />
-                  Finish turn
-                </button>
-              )}
-            </div>
+            {game?.status !== "finished" && (
+              <div className="turn-actions">
+                {game?.status === "turn-ended" ? (
+                  <button
+                    className="primary-button"
+                    disabled={loading}
+                    onClick={() => void loadTurn("next")}
+                  >
+                    Next turn <Icon name="arrow" size={16} />
+                  </button>
+                ) : (
+                  <button
+                    className="finish-button sidebar-action"
+                    disabled={!active || loading}
+                    onClick={finish}
+                  >
+                    <Icon name="flag" size={15} />
+                    Finish turn
+                  </button>
+                )}
+              </div>
+            )}
           </section>
           <section className="panel game-status" aria-label="Game statistics">
             <div className="panel-title">
@@ -1640,14 +1651,23 @@ export default function TradingGame() {
               )}
             />
             <div className="turn-actions">
-              <button
-                className="finish-button sidebar-action restart-game"
-                disabled={!game || loading}
-                onClick={() => setModal("restart")}
-              >
-                <Icon name="refresh" size={16} />
-                Restart game
-              </button>
+              {game?.status === "finished" ? (
+                <button
+                  className="finish-button sidebar-action"
+                  disabled={loading}
+                  onClick={() => void loadTurn("new")}
+                >
+                  <Icon name="refresh" size={16} /> New game
+                </button>
+              ) : (
+                <button
+                  className="finish-button sidebar-action restart-game"
+                  disabled={!game || loading}
+                  onClick={() => setModal("restart")}
+                >
+                  <Icon name="refresh" size={16} /> Restart game
+                </button>
+              )}
             </div>
           </section>
         </aside>
@@ -1931,8 +1951,11 @@ export default function TradingGame() {
               <h3>Read the context</h3>
               <p>
                 Start with 500–1,500 real{" "}
-                {revealSymbol ? "BTCUSDT perpetual" : "market"} candles. Prices
-                are scaled so the initial close is 100. Dates stay hidden.
+                {revealSymbol
+                  ? `${session?.symbol ?? "BTCUSDT"} perpetual`
+                  : "market"}{" "}
+                candles. Prices are scaled so the initial close is 100. Dates
+                stay hidden.
               </p>
             </article>
             <article>
@@ -2063,6 +2086,9 @@ function SummaryView({
   summary: Summary;
   back: () => void;
 }) {
+  const tradeMarkets = s.turns.flatMap((turn) =>
+    Array.from({ length: turn.trades }, () => turn.symbol ?? "BTCUSDT"),
+  );
   const wins = s.trades.filter((t) => t.net > 0).length;
   const profits = s.trades.reduce((a, t) => a + Math.max(t.net, 0), 0),
     losses = s.trades.reduce((a, t) => a + Math.max(-t.net, 0), 0);
@@ -2161,6 +2187,7 @@ function SummaryView({
           <thead>
             <tr>
               <th>Turn</th>
+              <th>Market</th>
               <th>Trades</th>
               <th>Candles</th>
               <th>Fees</th>
@@ -2171,6 +2198,7 @@ function SummaryView({
             {s.turns.map((t) => (
               <tr key={t.number}>
                 <td>{String(t.number).padStart(2, "0")}</td>
+                <td>{t.symbol ?? "BTCUSDT"}</td>
                 <td>{t.trades}</td>
                 <td>{t.bars}</td>
                 <td>${money(t.fees)}</td>
@@ -2187,6 +2215,7 @@ function SummaryView({
             <table>
               <thead>
                 <tr>
+                  <th>Market</th>
                   <th>Side</th>
                   <th>Entry</th>
                   <th>Final exit</th>
@@ -2196,8 +2225,9 @@ function SummaryView({
                 </tr>
               </thead>
               <tbody>
-                {s.trades.map((t) => (
+                {s.trades.map((t, index) => (
                   <tr key={t.id}>
+                    <td>{tradeMarkets[index] ?? "Hidden"}</td>
                     <td>{t.side}</td>
                     <td>{price(t.entry)}</td>
                     <td>{price(t.exit)}</td>

@@ -121,6 +121,7 @@ export function tradesCsv(s: Summary) {
       "net_pnl_usdt",
       "exit_reason",
       "planned_tp_sl_ratio",
+      "initial_quantity_asset",
     ],
     ...s.trades.map((t, i) => {
       const turn = turns.find((v) => i >= v.start && i < v.end)?.turn;
@@ -129,7 +130,7 @@ export function tradesCsv(s: Summary) {
         s.id,
         t.id,
         turn?.number ?? (s.id === "current" ? s.turns.length + 1 : null),
-        "BTCUSDT",
+        turn ? (turn.symbol ?? "BTCUSDT") : null,
         turn?.interval,
         t.side,
         iso(t.opened),
@@ -140,12 +141,13 @@ export function tradesCsv(s: Summary) {
         f,
         f ? t.entry / f : null,
         f ? t.exit / f : null,
-        f ? t.qty * f : null,
+        f && (turn?.symbol ?? "BTCUSDT") === "BTCUSDT" ? t.qty * f : null,
         t.gross,
         t.fees,
         t.net,
         t.reason,
         t.plannedRatio,
+        f ? t.qty * f : null,
       ];
     }),
   ]);

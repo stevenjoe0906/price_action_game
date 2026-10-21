@@ -8,13 +8,15 @@ import {
   LineStyle,
   PriceScaleMode,
   TrackingModeExitMode,
+  type TickMarkType,
+  type Time,
   createChart,
   type IChartApi,
   type ISeriesApi,
   type IPriceLine,
   type UTCTimestamp,
 } from "lightweight-charts";
-import { chartPrice, chartTime } from "@/lib/chart-display";
+import { chartPrice, chartTime, chartTimeTick } from "@/lib/chart-display";
 import ChartDrawings from "./ChartDrawings";
 import ChartCrosshair from "./ChartCrosshair";
 import { createChartNavigation } from "@/lib/chart-navigation";
@@ -127,7 +129,13 @@ export default function PriceChart({
         priceFormatter: (p: number) => chartPrice(p, revealFactor),
         timeFormatter,
       },
-      timeScale: { tickMarkFormatter: timeFormatter },
+      timeScale: {
+        tickMarkFormatter: (time: Time, type: TickMarkType) =>
+          revealFactor
+            ? chartTimeTick(Number(time), type)
+            : timeFormatter(time).replace("Bar ", ""),
+        tickMarkMaxCharacterLength: 8,
+      },
     });
   }, [revealFactor]);
   const count = useRef(0);
@@ -165,7 +173,12 @@ export default function PriceChart({
         uniformDistribution: true,
         allowBoldLabels: false,
         timeVisible: true,
-        tickMarkFormatter: relativeTime,
+        secondsVisible: false,
+        tickMarkFormatter: (time: Time, type: TickMarkType) =>
+          revealRef.current
+            ? chartTimeTick(Number(time), type)
+            : relativeTime(time).replace("Bar ", ""),
+        tickMarkMaxCharacterLength: 8,
       },
       localization: {
         timeFormatter: relativeTime,

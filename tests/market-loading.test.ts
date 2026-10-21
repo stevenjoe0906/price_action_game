@@ -15,7 +15,10 @@ test("archive requests are shared across timeframes and concurrent starts; daily
   globalThis.fetch = (async (input: string | URL | Request) => {
     const url = String(input);
     if (url === "/data/index.json") return Response.json({ months });
-    assert.ok(url.startsWith("/data/"));
+    assert.ok(
+      url.startsWith("/data/BTCUSDT-"),
+      "Legacy BTC-only manifests never request ETH",
+    );
     const month = url.match(/5m-(\d{4}-\d{2})\.zip$/)![1];
     counts.set(month, (counts.get(month) ?? 0) + 1);
     active++;
@@ -53,6 +56,7 @@ test("archive requests are shared across timeframes and concurrent starts; daily
       b.candles,
       "Concurrent callers receive the same complete data",
     );
+    assert.equal(first.symbol, "BTCUSDT");
     assert.equal(first.candles.length, 1500);
     const messages: string[] = [];
     const daily = await randomSession("1d", (message) =>

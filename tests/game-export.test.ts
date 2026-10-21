@@ -177,3 +177,24 @@ test("chart reveal formats actual prices and UTC only after the turn without add
     "Formatting must not change the simulation",
   );
 });
+
+test("mixed-market trades export their own source symbol and asset quantities; legacy games stay BTC", () => {
+  const s: Summary = {
+    ...summary,
+    turns: [
+      summary.turns[0],
+      { ...summary.turns[0], number: 2, symbol: "ETHUSDT", factor: 0.05 },
+    ],
+    trades: [trade, { ...trade, id: 2 }],
+  };
+  const [headers, ...records] = rows(tradesCsv(s));
+  const record = (index: number) =>
+    Object.fromEntries(headers.map((h, i) => [h, records[index][i]]));
+  assert.equal(record(0).symbol, "BTCUSDT");
+  assert.equal(record(0).initial_quantity_asset, "0.1");
+  assert.equal(record(0).initial_quantity_btc, "0.1");
+  assert.equal(record(1).symbol, "ETHUSDT");
+  assert.equal(record(1).entry_usdt, "2000");
+  assert.equal(record(1).initial_quantity_asset, "2.5");
+  assert.equal(record(1).initial_quantity_btc, "");
+});

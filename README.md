@@ -1,6 +1,6 @@
 # Price Action — Trading Lab
 
-A self-hosted BTCUSDT perpetual trading practice game. Built with Next.js, React, TypeScript, and TradingView Lightweight Charts. All trades are simulated in the browser. No accounts, API keys, database, or paid services.
+A self-hosted BTCUSDT/ETHUSDT perpetual trading practice game. Built with Next.js, React, TypeScript, and TradingView Lightweight Charts. All trades are simulated in the browser. No accounts, API keys, database, or paid services.
 
 ## Run locally
 
@@ -14,7 +14,7 @@ pnpm data:download
 pnpm dev
 ```
 
-Open **http://localhost:3000**. Downloading history is a one-time setup; rerunning it reuses validated existing archives. By default, it downloads monthly BTCUSDT USD-M perpetual 5-minute archives from January 2022 through the previous month (roughly 20–25 MB as of October 2026). The browser derives the other timeframes from complete 5-minute groups.
+Open **http://localhost:3000**. Downloading history is a one-time setup; rerunning it reuses validated existing archives. By default, it downloads monthly BTCUSDT and ETHUSDT USD-M perpetual 5-minute archives from January 2022 through the previous month (roughly 40–50 MB combined as of October 2026). The browser derives the other timeframes from complete 5-minute groups.
 
 A smaller/custom date range is supported:
 
@@ -58,7 +58,7 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-The container is published at **http://127.0.0.1:3002** on the server for a host Nginx reverse proxy. The first build installs dependencies, downloads free BTCUSDT history, and exports the website. The running container serves only static files with Nginx, includes an HTTP health check, and uses `restart: unless-stopped`. No database, API key, application backend, or data volume is needed. Settings and completed-game history remain in each browser.
+The container is published at **http://127.0.0.1:3002** on the server for a host Nginx reverse proxy. The first build installs dependencies, downloads free BTCUSDT and ETHUSDT history, and exports the website. The running container serves only static files with Nginx, includes an HTTP health check, and uses `restart: unless-stopped`. No database, API key, application backend, or data volume is needed. Settings and completed-game history remain in each browser.
 
 The defaults in `compose.yaml` and `.env.example` are `BIND_ADDRESS=127.0.0.1` and `PORT=3002`, mapping host port 3002 to container port 80. If you already have a `.env` file, update these two values explicitly: pulling repository changes does not overwrite your existing configuration. Run `docker compose up -d --build` after changes. To publish directly without a host proxy, change `BIND_ADDRESS` to `0.0.0.0` and permit the selected port in your firewall.
 
@@ -136,7 +136,7 @@ The page and scroll-panel boundaries suppress overscroll bounce/pull-to-refresh 
 ## Game rules
 
 - A new game starts with **10,000 USDT**. Balance carries across **20 turns**. Liquidation ends the game immediately. There is no manual End Game button.
-- Each turn randomly selects a historical start at or after January 1, 2022. It shows **500–1,500 initial candles**, repicking when history is insufficient. The initial final close is normalized to **100** using one fixed OHLC multiplier throughout the turn. Calendar dates are hidden during play. When the turn ends, chart axes, crosshair and OHLC values reveal real BTCUSDT prices and UTC dates using the original normalization factor; the visible candle history stays unchanged. The market symbol and Bitcoin icon are hidden before a game starts and during active turns, and revealed only after a turn ends. The separate introductory slogan area is removed.
+- Each turn randomly selects BTCUSDT or ETHUSDT from the installed data pack, with equal probability when both are present, then a historical start at or after January 1, 2022. It shows **500–1,500 initial candles**, repicking when history is insufficient. The initial final close is normalized to **100** using one fixed OHLC multiplier throughout the turn. Calendar dates are hidden during play. When the turn ends, chart axes, crosshair and OHLC values reveal real prices for the selected market and UTC dates using the original normalization factor; the visible candle history stays unchanged. The market symbol and asset icon are hidden before a game starts and during active turns, and revealed only after a turn ends. The separate introductory slogan area is removed.
 - Replay has **no fixed candle limit**. Play at 1×, 2×, 5×, 10×, or 20×; one candle per second at 1×. **Space** toggles playback; **Right Arrow** or **Next** advances immediately when pressed, then repeats at the same selected 1×–20× rate as Play (one candle per second at 1×). Speed changes also update a running hold. Playback pauses in a hidden tab.
 - **Finish turn** cancels every pending order and closes the open position at the **last visible close**, with market slippage and fees. It reveals no further candles. Reaching the latest closed API candle or the end of the installed archive pack automatically finishes the turn. Data gaps and connection errors pause playback instead of fabricating prices.
 - **Repick** changes the chart without consuming a turn, until an order is successfully submitted. Canceling that order does not unlock Repick.
@@ -154,7 +154,7 @@ OHLC data cannot establish the intrabar price path. Protection on an existing po
 
 Cross margin uses total account equity with a fixed **0.5% maintenance rate**, candle prices rather than mark prices, and no tiered margin schedules. If liquidation and SL are both reachable, the closer adverse threshold wins; opening gaps beyond liquidation liquidate immediately. Negative post-liquidation account balances are floored at zero. These rules model practice, not a specific exchange's liquidation system.
 
-Prices and quantities are normalized: displayed **units are not literal BTC**. Scaling quantity inversely with normalized price preserves the simulated USDT P&L, percentage risk, fees, and margin relationships. New orders, liquidation calculations, and positions all use the same price scale.
+Prices and quantities are normalized: displayed **units are not literal BTC or ETH**. Scaling quantity inversely with normalized price preserves the simulated USDT P&L, percentage risk, fees, and margin relationships. New orders, liquidation calculations, and positions all use the same price scale.
 
 Trade count and win rate use **fully closed position cycles**, net of entry/exit fees. Partial closes accumulate within that cycle. Reversing closes one cycle and starts another. Summary drawdown measures **turn-end balances**, not intrabar equity drawdown.
 
@@ -238,7 +238,7 @@ Charts use [TradingView Lightweight Charts](https://www.tradingview.com/lightwei
 
 The game summary (including saved games and the current realized summary) provides **Share card** and **Export CSVs**. Share card opens a modal image preview with separate Share and Download buttons; generating the PNG is deferred until the preview opens. The PNG card contains aggregate metrics and the completed-turn equity curve, without individual trades. The preview’s Share button uses the native file-sharing sheet when supported; Download saves a PNG file. iOS may open a file preview rather than saving to Photos: use Share → Save Image when offered, or touch and hold the card for image options. Websites cannot force saving directly into the photo album. Attach the PNG to X, Discord or Telegram yourself.
 
-CSV export requests two UTF-8 files: one game summary row and the full closed-trade list. Separate download links remain available if the browser blocks multiple downloads. Trade exports include UTC timestamps, normalized entry/final exit and quantity, gross/net P&L, fees, reason, and turn. Newly completed turns also record source factor and interval so CSVs can include real USDT prices and BTC quantity. Those columns are blank for older summaries without that metadata. Final exit is the final closing fill, rather than a weighted exit across partial closes; gross and net results include all closes. Turn-end drawdown measures completed-turn balances, rather than intraturn equity.
+CSV export requests two UTF-8 files: one game summary row and the full closed-trade list. Separate download links remain available if the browser blocks multiple downloads. Trade exports include UTC timestamps, normalized entry/final exit and quantity, gross/net P&L, fees, reason, and turn. Newly completed turns also record source factor and interval so CSVs can include real USDT prices and asset quantity. Those columns are blank for older summaries without that metadata. Final exit is the final closing fill, rather than a weighted exit across partial closes; gross and net results include all closes. Turn-end drawdown measures completed-turn balances, rather than intraturn equity.
 
 All PNG/CSV generation happens in browser memory; exports make no server requests or server files.
 
@@ -255,3 +255,11 @@ The order ticket shows estimated gross profit:loss below estimated margin, alway
 Each trade retains its entry-plan ratio for Statistics and CSV exports. Additions use a quantity-weighted average of entry plans across that trade; changing or removing position protection does not rewrite the original plan. A combined trade has no defined ratio if an entry lacks a TP. This turn and This game show the arithmetic mean of defined trade ratios, including the open position and excluding pending orders. Older records without this metadata show `—` and are excluded from averages.
 
 Account statistics now appear in **This game**, below **This turn**, rather than in a top status strip. **Restart game** opens a confirmation dialog. Confirming cancels pending orders, closes any open position at the last visible price using normal execution costs, and saves the record in Statistics before resetting to turn 1 and $10,000. Restarted games are labeled in history and exports and share the existing ten-game browser history limit. If data loading or saving fails, the current game remains available. An already completed, saved game is not archived again.
+
+## BTC and ETH replay packs
+
+`pnpm data:download` now downloads both markets by default and upgrades the existing BTC-only manifest without redownloading validated BTC archives. Run it again, rebuild, and refresh the page to enable ETH on an existing installation. For Docker deployment, rebuild after pulling the updated downloader; changing that script invalidates its data-stage cache. `--symbols=BTCUSDT` or `--symbols=ETHUSDT` restricts a download run, while preserving other previously downloaded markets.
+
+Each turn and repick chooses a market independently; a game can contain both markets but is not forced to alternate. Existing BTC-only packs remain usable and select BTC until ETH is downloaded. Archive caches, API fallback, future replay, and source conversion metadata all follow the selected symbol. Completed-turn and trade review tables identify the market. Old saved games remain BTC. CSV exports add `initial_quantity_asset` for BTC or ETH; the legacy `initial_quantity_btc` column stays blank for ETH trades. The current hidden turn does not expose its symbol in trade exports.
+
+After the game ends, **New game** appears under **This game**, replacing **Restart game**; **This turn** has no game-start action. Revealed time-axis ticks use compact UTC times (`13:30`), day numbers, month names, or years according to zoom and date boundaries. The crosshair still shows the full UTC date and time, and active turns retain relative bar numbering.

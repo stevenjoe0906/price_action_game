@@ -1,4 +1,4 @@
-// Download public monthly BTCUSDT perpetual archives for backend-free local replay.
+// Download public monthly BTCUSDT/ETHUSDT perpetual archives for backend-free local replay.
 import { mkdir, readFile, writeFile, rename, stat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -12,6 +12,15 @@ const root = path.resolve(
 const args = process.argv.slice(2);
 const get = (key, fallback) =>
   args.find((a) => a.startsWith(`${key}=`))?.split("=")[1] ?? fallback;
+const symbols = [
+  ...new Set(
+    get("--symbols", "BTCUSDT,ETHUSDT")
+      .split(",")
+      .map((s) => s.trim().toUpperCase()),
+  ),
+];
+if (!symbols.length || symbols.some((s) => !["BTCUSDT", "ETHUSDT"].includes(s)))
+  throw new Error("Use --symbols=BTCUSDT,ETHUSDT (or either market).");
 const now = new Date();
 const from = get("--from", "2022-01");
 const to = get(
@@ -31,7 +40,15 @@ let previous = { months: [] };
 try {
   previous = JSON.parse(await readFile(path.join(root, "index.json"), "utf8"));
 } catch {}
-const completed = new Set(previous.months);
+const completed = Object.fromEntries(
+  ["BTCUSDT", "ETHUSDT"].map((symbol) => [
+    symbol,
+    new Set(
+      previous.symbols?.[symbol]?.months ??
+        (symbol === (previous.symbol ?? "BTCUSDT") ? previous.months : []),
+    ),
+  ]),
+);
 const months = [];
 for (
   let d = new Date(`${from}-01T00:00:00Z`);
@@ -47,25 +64,25 @@ function validZip(bytes) {
   if (rows.length < 2 || !rows.some((r) => /^\d{13},/.test(r)))
     throw new Error("Invalid Binance archive");
 }
-async function download(month) {
-  const name = `BTCUSDT-5m-${month}.zip`,
+async function download({ month, symbol }) {
+  const name = `${symbol}-5m-${month}.zip`,
     dest = path.join(root, name);
   try {
     if ((await stat(dest)).size > 1000) {
       validZip(new Uint8Array(await readFile(dest)));
-      completed.add(month);
-      console.log(`Cached ${month}`);
+      completed[symbol].add(month);
+      console.log(`Cached ${symbol} ${month}`);
       return;
     }
   } catch {}
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
       const response = await fetch(
-        `https://data.binance.vision/data/futures/um/monthly/klines/BTCUSDT/5m/${name}`,
+        `https://data.binance.vision/data/futures/um/monthly/klines/${symbol}/5m/${name}`,
         { signal: AbortSignal.timeout(60_000) },
       );
       if (response.status === 404) {
-        console.log(`Not published: ${month}`);
+        console.log(`Not published: ${symbol} ${month}`);
         return;
       }
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -73,31 +90,38 @@ async function download(month) {
       validZip(bytes);
       await writeFile(`${dest}.tmp`, bytes);
       await rename(`${dest}.tmp`, dest);
-      completed.add(month);
+      completed[symbol].add(month);
       console.log(
-        `Downloaded ${month} (${Math.round(bytes.length / 1024)} KB)`,
+        `Downloaded ${symbol} ${month} (${Math.round(bytes.length / 1024)} KB)`,
       );
       return;
     } catch (e) {
-      if (attempt === 2) throw new Error(`${month}: ${e.message}`);
+      if (attempt === 2) throw new Error(`${symbol} ${month}: ${e.message}`);
     }
   }
 }
 let failure;
-for (let i = 0; i < months.length; i += 4) {
-  const results = await Promise.allSettled(
-    months.slice(i, i + 4).map(download),
-  );
+const jobs = symbols.flatMap((symbol) =>
+  months.map((month) => ({ symbol, month })),
+);
+for (let i = 0; i < jobs.length; i += 4) {
+  const results = await Promise.allSettled(jobs.slice(i, i + 4).map(download));
   for (const r of results)
     if (r.status === "rejected") {
       console.error(r.reason.message);
       failure = true;
     }
   const manifest = {
-    symbol: "BTCUSDT",
+    version: 2,
+    symbol: "BTCUSDT", // Legacy readers still see BTC history only.
+    symbols: Object.fromEntries(
+      Object.entries(completed)
+        .filter(([, months]) => months.size)
+        .map(([symbol, months]) => [symbol, { months: [...months].sort() }]),
+    ),
     market: "Binance USD-M perpetual",
     baseInterval: "5m",
-    months: [...completed].sort(),
+    months: [...completed.BTCUSDT].sort(),
   };
   await writeFile(
     path.join(root, "index.json"),
@@ -105,6 +129,6 @@ for (let i = 0; i < months.length; i += 4) {
   );
 }
 console.log(
-  `${completed.size} monthly archives available. Rebuild after downloading if using a static export.`,
+  `${Object.values(completed).reduce((total, months) => total + months.size, 0)} monthly archives available. Rebuild after downloading if using a static export.`,
 );
 if (failure) process.exitCode = 1;

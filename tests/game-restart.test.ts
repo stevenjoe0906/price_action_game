@@ -127,6 +127,36 @@ test("restart requires confirmation, retains trade history and rejects storage/d
     assert.ok(
       doc.querySelector('[role="dialog"]')?.textContent?.includes("Restarted"),
     );
+    await act(async () =>
+      doc
+        .querySelector<HTMLButtonElement>('[aria-label="Close dialog"]')!
+        .click(),
+    );
+    for (let turn = 1; turn <= 20; turn++) {
+      await click("Finish turn");
+      if (turn < 20) await click("Next turn");
+    }
+    assert.equal(stored().length, 2, "Finished game is archived once");
+    await act(async () =>
+      doc
+        .querySelector<HTMLButtonElement>('[aria-label="Close dialog"]')!
+        .click(),
+    );
+    assert.equal(doc.querySelector(".turn-status .turn-actions"), null);
+    assert.equal(doc.querySelector(".restart-game"), null);
+    assert.ok(
+      doc
+        .querySelector(".game-status .turn-actions")
+        ?.textContent?.includes("New game"),
+    );
+    await click("New game");
+    assert.ok(doc.querySelector(".restart-game"));
+    assert.ok(doc.querySelector(".turn-status .finish-button"));
+    assert.equal(
+      stored().length,
+      2,
+      "Starting again does not duplicate completed game",
+    );
   } finally {
     act(() => root.unmount());
     dom.window.close();
