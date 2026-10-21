@@ -160,11 +160,14 @@ export default function PriceChart({
     api.current = chart;
     series.current = s;
     ema.current = chart.addSeries(LineSeries, {
-      color: "#efb464",
+      color: CHART_THEMES[theme].ema,
       lineWidth: 2,
       title: "EMA 20",
-      priceLineVisible: false,
-      lastValueVisible: false,
+      priceLineVisible: true,
+      priceLineColor: CHART_THEMES[theme].emaPriceLine,
+      priceLineStyle: LineStyle.Dotted,
+      priceLineWidth: 1,
+      lastValueVisible: true,
       crosshairMarkerVisible: false,
       priceFormat: { type: "price", precision: 4, minMove: 0.0001 },
     });
@@ -258,7 +261,10 @@ export default function PriceChart({
         },
       },
     });
-    ema.current?.applyOptions({ color: theme === "dark" ? "#efb464" : "#a86d18" });
+    ema.current?.applyOptions({
+      color: palette.ema,
+      priceLineColor: palette.emaPriceLine,
+    });
     series.current?.applyOptions({
       priceLineColor: palette.currentPrice,
       upColor: palette.up,

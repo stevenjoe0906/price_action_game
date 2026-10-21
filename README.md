@@ -159,7 +159,7 @@ Stop-limit orders first activate at the stop trigger, then behave as limit order
 
 The chart uses a linear price scale and the library's uniform time-tick distribution to avoid partially drawn time marks of the same priority. Native grid lines remain tied to the price/time axes and adapt to zoom; this is not a fixed-pixel decorative grid.
 
-Open **Indicators → EMA 20** to show/hide the 20-period exponential moving average of closes, enabled by default for each chart. It is calculated from revealed candles only, seeded from the first available close, and updated incrementally during replay. Repicking or starting another chart rebuilds it from that chart's history. Changing theme or display size keeps the indicator aligned. Lightweight Charts supports custom indicator series; it does not bundle the TradingView.com indicator catalog or Pine Script picker.
+Open **Indicators → EMA 20** to show/hide the 20-period exponential moving average of closes, enabled by default for each chart. It is calculated from revealed candles only, seeded from the first available close, and updated incrementally during replay. Repicking or starting another chart rebuilds it from that chart's history. Changing theme or display size keeps the indicator aligned. Its latest value has a faint dotted horizontal guide in the EMA color and a numeric price-axis label; both hide with the indicator. Lightweight Charts supports custom indicator series; it does not bundle the TradingView.com indicator catalog or Pine Script picker.
 
 ## Chart drawing toolbar
 
