@@ -940,12 +940,13 @@ h1 > span {
 .submit-order {
   margin: 0 15px;
   width: calc(100% - 30px);
-  padding: 11px 12px;
+  min-height: 44px;
+  padding: 0 10px;
   border-radius: 4px;
   border: 1px solid transparent;
-  font-size: 0.9375rem;
-  font-weight: 600;
-  justify-content: space-between;
+  font-size: 0.875rem;
+  font-weight: 400;
+  justify-content: center;
 }
 .submit-order.long {
   background: var(--green);

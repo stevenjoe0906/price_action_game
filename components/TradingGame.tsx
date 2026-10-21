@@ -1336,7 +1336,7 @@ export default function TradingGame() {
                   disabled={!active || loading}
                   onClick={startTicket}
                 >
-                  Start trading <Icon name="arrow" size={16} />
+                  <Icon name="arrow" size={15} /> Start trading
                 </button>
               </div>
             ) : (
@@ -1454,13 +1454,13 @@ export default function TradingGame() {
                   </div>
                 </div>
                 <button
-                  className={`submit-order ${side}`}
+                  className={`finish-button submit-order ${side}`}
                   disabled={loading}
                   onClick={placeOrder}
                 >
+                  <Icon name="arrow" size={15} />
                   {orderType === "market" ? "Open" : "Place"} {side}{" "}
                   {orderType !== "market" ? "order" : "position"}
-                  <Icon name="arrow" size={17} />
                 </button>
                 <p className="ticket-footnote">
                   Drag the chart lines to fine-tune your entry and protection.
