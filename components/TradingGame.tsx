@@ -830,23 +830,23 @@ export default function TradingGame() {
       </header>
       <section className="metrics-strip" aria-label="Game statistics">
         <div className="metric turn-metric">
-          <span>Game progress</span>
+          <span>Progress</span>
           <GameProgress game={game} />
           <small>20 turns per game</small>
         </div>
         <Metric
-          label="Account balance"
+          label="Balance"
           value={`$${money(balance)}`}
           sub="USDT · Cross margin"
         />
         <Metric
-          label="Realized P&L"
+          label="PnL"
           value={signed(balance - INITIAL_BALANCE)}
           className={tone(balance - INITIAL_BALANCE)}
           sub="Net of trading fees"
         />
         <Metric
-          label="Unrealized P&L"
+          label="uPnL"
           value={signed(upnl)}
           className={tone(upnl)}
           sub="Current open position"
@@ -866,7 +866,7 @@ export default function TradingGame() {
           sub={game?.position ? "1 position open" : "No open positions"}
         />
         <Metric
-          label="Total fees"
+          label="Fees"
           value={`$${money(game?.fees ?? 0)}`}
           sub="0.05% maker / taker"
         />
@@ -1097,7 +1097,7 @@ export default function TradingGame() {
                 </select>
 
                 <button
-                  className="text-button repick"
+                  className="next-button repick"
                   disabled={!active || !!game?.traded || loading}
                   title={
                     game?.traded
@@ -1538,6 +1538,11 @@ export default function TradingGame() {
       {modal === "chart-help" && (
         <Modal title="Chart help" close={() => setModal(null)}>
           <div className="chart-help-content">
+            <p>
+              On touch screens, tap the chart to inspect a price and bar. Drag
+              to move the crosshair without panning; tap again to resume chart
+              panning. On a computer, the crosshair follows the mouse.
+            </p>
             <p>
               {game?.status === "turn-ended"
                 ? "Turn complete · no more candles revealed"
@@ -2068,35 +2073,11 @@ function SummaryView({
 }
 
 function GameProgress({ game }: { game: Game | null }) {
-  const completed = game?.turns.length ?? 0;
   return (
-    <div className="game-progress">
+    <div className="game-progress" aria-label="Current turn">
       <strong>
-        {game ? `Turn ${String(game.turn).padStart(2, "0")}` : "Not started"}{" "}
-        <span>/ 20</span>
+        {game ? String(game.turn).padStart(2, "0") : "—"} <span>/ 20</span>
       </strong>
-      <div
-        className="progress-track"
-        role="progressbar"
-        aria-label="Completed turns"
-        aria-valuemin={0}
-        aria-valuemax={20}
-        aria-valuenow={completed}
-        aria-valuetext={`${completed} of 20 turns completed`}
-      >
-        {Array.from({ length: 20 }, (_, i) => (
-          <i
-            key={i}
-            className={
-              i < completed
-                ? "done"
-                : i === (game?.turn ?? 0) - 1
-                  ? "current"
-                  : ""
-            }
-          />
-        ))}
-      </div>
     </div>
   );
 }

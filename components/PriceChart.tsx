@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   CandlestickSeries,
   LineSeries,
@@ -7,6 +7,7 @@ import {
   CrosshairMode,
   LineStyle,
   PriceScaleMode,
+  TrackingModeExitMode,
   createChart,
   type IChartApi,
   type ISeriesApi,
@@ -15,6 +16,7 @@ import {
 } from "lightweight-charts";
 import ChartDrawings from "./ChartDrawings";
 import ChartCrosshair from "./ChartCrosshair";
+import { createChartNavigation } from "@/lib/chart-navigation";
 import { calculateEMA, nextEMA } from "@/lib/indicators";
 import ChartOrderMenu from "./ChartOrderMenu";
 import ChartLineControls from "./ChartLineControls";
@@ -69,6 +71,16 @@ export default function PriceChart({
   const emaValue = useRef<number | null>(null);
   const container = useRef<HTMLDivElement>(null);
   const api = useRef<IChartApi | null>(null);
+  const navigation = useRef<ReturnType<typeof createChartNavigation> | null>(
+    null,
+  );
+  if (!navigation.current)
+    navigation.current = createChartNavigation(() => api.current);
+  const [drawingLocked, setDrawingLocked] = useState(false);
+  const drawingNavigation = useCallback((locked: boolean) => {
+    navigation.current?.lock("drawing", locked);
+    setDrawingLocked(locked);
+  }, []);
   const series = useRef<ISeriesApi<"Candlestick"> | null>(null);
   const priceLines = useRef(new Map<string, IPriceLine>());
   const dataRef = useRef(candles);
@@ -77,6 +89,10 @@ export default function PriceChart({
   anchorRef.current = anchor;
   const callbacks = useRef({ onLine, onLinePreview, onDragStart });
   callbacks.current = { onLine, onLinePreview, onDragStart };
+  const inspectNavigation = useCallback((locked: boolean) => {
+    navigation.current?.lock("inspection", locked);
+    if (locked) callbacks.current.onDragStart();
+  }, []);
   const [revision, redraw] = useState(0);
   const [dragging, setDragging] = useState<LinePreview | null>(null);
   const drag = useRef<ReturnType<typeof createLineDrag> | null>(null);
@@ -84,7 +100,7 @@ export default function PriceChart({
     drag.current = createLineDrag({
       toPrice: (y) => series.current?.coordinateToPrice(y) ?? null,
       start: () => {
-        api.current?.applyOptions({ handleScroll: false, handleScale: false });
+        navigation.current?.lock("order", true);
         callbacks.current.onDragStart();
       },
       preview: (line) => {
@@ -95,7 +111,7 @@ export default function PriceChart({
       },
       commit: (line) => callbacks.current.onLine(line.id, line.price),
       finish: () => {
-        api.current?.applyOptions({ handleScroll: true, handleScale: true });
+        navigation.current?.lock("order", false);
         setDragging(null);
       },
     });
@@ -109,6 +125,7 @@ export default function PriceChart({
     };
     const chart = createChart(container.current, {
       autoSize: true,
+      trackingMode: { exitMode: TrackingModeExitMode.OnTouchEnd },
       layout: {
         background: { type: ColorType.Solid, color: "#101619" },
         textColor: "#7d8b91",
@@ -183,6 +200,10 @@ export default function PriceChart({
     const observer = new ResizeObserver(update);
     observer.observe(container.current);
     const node = container.current;
+    const beginPan = (event: PointerEvent) => {
+      if (event.button === 0) navigation.current?.beginPan();
+    };
+    node.addEventListener("pointerdown", beginPan, true);
     node.addEventListener("pointerup", update);
     node.addEventListener("wheel", update);
     node.addEventListener("pointermove", pan);
@@ -192,6 +213,7 @@ export default function PriceChart({
       node.removeEventListener("pointerup", update);
       node.removeEventListener("wheel", update);
       node.removeEventListener("pointermove", pan);
+      node.removeEventListener("pointerdown", beginPan, true);
       priceLines.current.clear();
       chart.remove();
       api.current = null;
@@ -218,9 +240,10 @@ export default function PriceChart({
     } else if (candles.length > count.current) {
       const b = candles[candles.length - 1];
       series.current.update({ ...b, time: b.time as UTCTimestamp });
-      const value = emaValue.current === null
-        ? b.close
-        : nextEMA(emaValue.current, b.close, 20);
+      const value =
+        emaValue.current === null
+          ? b.close
+          : nextEMA(emaValue.current, b.close, 20);
       ema.current?.update({ time: b.time as UTCTimestamp, value });
       emaValue.current = value;
     }
@@ -367,7 +390,9 @@ export default function PriceChart({
         <div ref={container} className="chart-canvas" />
         <details
           className="chart-indicators"
-          style={{ right: (api.current?.priceScale("right").width() ?? 80) + 12 }}
+          style={{
+            right: (api.current?.priceScale("right").width() ?? 80) + 12,
+          }}
           onPointerDown={(event) => event.stopPropagation()}
           onContextMenu={(event) => event.stopPropagation()}
         >
@@ -389,6 +414,7 @@ export default function PriceChart({
           expanded={expanded}
           onExpand={onExpand}
           contextOpen={canTrade && context !== null}
+          onNavigationLock={drawingNavigation}
         />
         <ChartCrosshair
           chart={api.current}
@@ -397,6 +423,8 @@ export default function PriceChart({
           anchor={anchor}
           theme={theme}
           textScale={textScale}
+          blocked={drawingLocked || dragging !== null || context !== null}
+          onInspectionChange={inspectNavigation}
         />
         <div className="chart-watermark">
           PRICE ACTION<span>READ THE MARKET. TRUST YOUR PROCESS.</span>

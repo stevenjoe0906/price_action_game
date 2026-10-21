@@ -51,10 +51,14 @@ test("turn progress belongs to statistics and chart/activity share the left work
       ["Play replay", "Next→", "Replay speed", "Repick", "Chart help"],
     );
     assert.equal(doc.querySelector(".pane-switch"), null);
-    assert.equal(
-      doc.querySelector('[role="progressbar"]')!.getAttribute("aria-valuemax"),
-      "20",
+    assert.equal(doc.querySelector('[role="progressbar"]'), null);
+    assert.deepEqual(
+      [...doc.querySelectorAll(".metrics-strip .metric > span")].map(
+        (node) => node.textContent,
+      ),
+      ["Progress", "Balance", "PnL", "uPnL", "Win rate", "Trades", "Fees"],
     );
+    assert.ok(doc.querySelector(".repick.next-button"));
   } finally {
     dom.window.close();
   }

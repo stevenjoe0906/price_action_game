@@ -27,6 +27,7 @@ type Props = {
   expanded: boolean;
   onExpand: () => void;
   contextOpen?: boolean;
+  onNavigationLock?: (locked: boolean) => void;
 };
 type Tool = "cursor" | DrawingKind;
 type Edit = {
@@ -77,6 +78,7 @@ export default function ChartDrawings({
   expanded,
   onExpand,
   contextOpen = false,
+  onNavigationLock,
 }: Props) {
   const [history, dispatch] = useReducer(drawingHistory, emptyDrawings);
   const [tool, setTool] = useState<Tool>("cursor");
@@ -168,11 +170,13 @@ export default function ChartDrawings({
     }
   };
   useEffect(() => {
-    chart?.applyOptions({
-      handleScroll: tool === "cursor" && !edit,
-      handleScale: tool === "cursor" && !edit,
-    });
-  }, [chart, tool, !!edit]);
+    const locked = tool !== "cursor" || !!edit;
+    if (onNavigationLock) {
+      onNavigationLock(locked);
+      return () => onNavigationLock(false);
+    }
+    chart?.applyOptions({ handleScroll: !locked, handleScale: !locked });
+  }, [chart, tool, !!edit, onNavigationLock]);
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
       if (

@@ -117,3 +117,10 @@ This specification incorporates the decisions agreed on October 20, 2026. The im
 - Provide a statically exported web-app manifest with standalone display mode, root scope/start URL, 192px/512px PNG icons, a maskable icon, and Apple home-screen metadata/icon.
 - Support installation through compatible Android, iPad, and desktop browsers over HTTPS. Browser support determines whether installation produces a standalone app or a normal shortcut.
 - Retain free screen rotation, pinch zoom, and existing touch layout. Installation does not add offline caching or active-game persistence.
+
+## Issue #10 chart and compact controls
+
+- Match Repick to Next's outlined style and the speed dropdown to its border; make Chart help a ghost icon button.
+- Use one compact statistics row labeled Progress, Balance, PnL, uPnL, Win rate, Trades, Fees. Remove the progress bar and horizontally scroll the row on narrow screens.
+- Allow vertical and horizontal plot dragging from the first drag without manually dragging the price axis. Reset view restores automatic fitting.
+- On touch, a plot tap shows persistent price/bar crosshairs and changes dragging to crosshair inspection. A second tap hides the guides and restores ordinary panning. Keep drawing/order editing, mouse crosshairs, and multi-touch gestures separate from tap detection.

@@ -2912,6 +2912,73 @@ select {
 .chart-order-menu {
   overscroll-behavior: none;
 }
+
+/* Compact replay controls and one horizontally scrollable statistics row. */
+.playback-buttons select {
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+}
+.playback-buttons .repick {
+  padding: 0 9px;
+  font-size: 0.9375rem;
+  gap: 8px;
+}
+.playback-buttons .repick svg {
+  width: 13px;
+  height: 13px;
+}
+.playback-buttons .chart-help-button {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+}
+.playback-buttons .chart-help-button:hover {
+  color: var(--text);
+}
+.app-shell .metrics-strip {
+  display: flex;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
+  gap: 0;
+  padding: 6px 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.app-shell .metrics-strip .metric {
+  display: flex;
+  flex: 1 0 auto;
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 12px;
+  border: 0;
+  border-right: 1px solid var(--border);
+  white-space: nowrap;
+}
+.app-shell .metrics-strip .metric:last-child {
+  border-right: 0;
+}
+.app-shell .metrics-strip .metric > span {
+  font-size: 0.8125rem;
+}
+.app-shell .metrics-strip .metric strong,
+.app-shell .metrics-strip .game-progress strong {
+  font: 1rem var(--mono);
+}
+.app-shell .metrics-strip .metric small {
+  display: none;
+}
+.app-shell .metrics-strip .game-progress {
+  display: block;
+  width: auto;
+}
+.touch-crosshair-target {
+  position: absolute;
+  inset: 0 auto auto 0;
+  z-index: 5;
+  touch-action: none;
+}
 @media (max-width: 850px) {
   .app-shell .left-panel.is-touch {
     height: max(28rem, 70dvh);
