@@ -996,10 +996,6 @@ h1 > span {
 .turn-status {
   padding-bottom: 13px;
 }
-.turn-status .panel-title {
-  border: 0;
-  min-height: 46px;
-}
 .turn-status > .detail {
   display: flex;
   justify-content: space-between;
@@ -3187,7 +3183,7 @@ select {
   padding-bottom: 4px;
 }
 .game-status {
-  padding: 20px;
+  padding: 0;
 }
 .game-status .game-progress strong {
   font-size: 0.875rem;
@@ -3195,9 +3191,6 @@ select {
 }
 .game-status .game-progress strong span {
   color: var(--muted);
-}
-.restart-game {
-  margin-top: 14px;
 }
 .restart-actions {
   display: flex;
@@ -3228,15 +3221,19 @@ select {
   flex: 0 0 auto;
   border-bottom: 1px solid var(--border);
 }
-.game-status .panel-title {
-  min-height: 30px;
-  margin-bottom: 8px;
-  padding: 0;
-}
 .game-status > .detail {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 10px;
-  padding: 6px 0;
+  padding: 6px 17px;
+}
+.trading-sidebar > .game-status,
+.has-session .trading-sidebar > .game-status {
+  border-bottom: 0;
+}
+.sidebar-action {
+  width: 100%;
+  min-height: 44px;
+  justify-content: center;
 }

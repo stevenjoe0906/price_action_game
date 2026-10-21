@@ -1332,7 +1332,7 @@ export default function TradingGame() {
                   )}
                 </p>
                 <button
-                  className="secondary-button full"
+                  className="finish-button sidebar-action"
                   disabled={!active || loading}
                   onClick={startTicket}
                 >
@@ -1543,9 +1543,6 @@ export default function TradingGame() {
           <section className="panel turn-status">
             <div className="panel-title">
               <h2>This turn</h2>
-              <span className="muted">
-                {game ? String(game.turn).padStart(2, "0") : "—"} / 20
-              </span>
             </div>
             <Detail
               label="Realized P&L"
@@ -1589,7 +1586,7 @@ export default function TradingGame() {
                 </button>
               ) : (
                 <button
-                  className="finish-button"
+                  className="finish-button sidebar-action"
                   disabled={!active || loading}
                   onClick={finish}
                 >
@@ -1642,14 +1639,16 @@ export default function TradingGame() {
                 ]),
               )}
             />
-            <button
-              className="secondary-button full restart-game"
-              disabled={!game || loading}
-              onClick={() => setModal("restart")}
-            >
-              <Icon name="refresh" size={16} />
-              Restart game
-            </button>
+            <div className="turn-actions">
+              <button
+                className="finish-button sidebar-action restart-game"
+                disabled={!game || loading}
+                onClick={() => setModal("restart")}
+              >
+                <Icon name="refresh" size={16} />
+                Restart game
+              </button>
+            </div>
           </section>
         </aside>
       </div>
