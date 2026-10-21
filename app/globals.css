@@ -2115,11 +2115,16 @@ select {
   z-index: 6;
   cursor: crosshair;
 }
+.drawing-overlay.is-editing {
+  z-index: 6;
+}
 .drawing-shape {
   cursor: move;
+  touch-action: none;
 }
 .drawing-handle {
   cursor: crosshair;
+  touch-action: none;
 }
 .chart-line-target {
   z-index: 4;

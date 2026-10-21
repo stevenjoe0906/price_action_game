@@ -85,6 +85,7 @@ export default function ChartDrawings({
   const [color, setColor] = useState<DrawingColor>("blue");
   const [draft, setDraft] = useState<Drawing | null>(null);
   const [edit, setEdit] = useState<Edit | null>(null);
+  const [dragging, setDragging] = useState(false);
   const svg = useRef<SVGSVGElement>(null);
   const down = useRef<{ x: number; y: number; pointer: number } | null>(null);
   const nextId = useRef(1);
@@ -113,11 +114,44 @@ export default function ChartDrawings({
     return x == null || y == null ? null : { x, y };
   };
   const cancel = () => {
+    releasePointer();
+    setDragging(false);
     setDraft(null);
     setEdit(null);
     down.current = null;
     setTool("cursor");
   };
+  const releasePointer = () => {
+    const pointer = down.current?.pointer;
+    down.current = null;
+    if (pointer !== undefined && svg.current?.hasPointerCapture?.(pointer))
+      svg.current.releasePointerCapture(pointer);
+  };
+  useEffect(() => {
+    const surface = svg.current?.parentElement;
+    if (!surface || (tool === "cursor" && !selected && !edit)) return;
+    // Set on the HTML ancestor before a touch starts, not only on SVG shapes.
+    const previous = surface.style.touchAction;
+    surface.style.touchAction = "none";
+    return () => {
+      surface.style.touchAction = previous;
+    };
+  }, [tool, selected, !!edit]);
+  useEffect(() => {
+    if (!dragging) return;
+    const body = document.body;
+    const previousOverflow = body.style.overflow;
+    const previousSelect = body.style.userSelect;
+    body.style.overflow = "hidden";
+    body.style.userSelect = "none";
+    const preventScroll = (event: TouchEvent) => event.preventDefault();
+    window.addEventListener("touchmove", preventScroll, { passive: false });
+    return () => {
+      body.style.overflow = previousOverflow;
+      body.style.userSelect = previousSelect;
+      window.removeEventListener("touchmove", preventScroll);
+    };
+  }, [dragging]);
   useEffect(() => {
     if (contextOpen) {
       cancel();
@@ -200,6 +234,8 @@ export default function ChartDrawings({
     return () => surface?.removeEventListener("pointerdown", deselect);
   }, []);
   const finish = (drawing: Drawing) => {
+    releasePointer();
+    setDragging(false);
     dispatch({ type: "add", drawing });
     setDraft(null);
     setTool("cursor");
@@ -207,7 +243,7 @@ export default function ChartDrawings({
     down.current = null;
   };
   const start = (event: ReactPointerEvent<SVGSVGElement>) => {
-    if (event.button !== 0 || tool === "cursor") return;
+    if (event.button !== 0 || tool === "cursor" || down.current) return;
     const p = point(event);
     if (!p) return;
     event.preventDefault();
@@ -234,17 +270,28 @@ export default function ChartDrawings({
       pointer: event.pointerId,
     };
     event.currentTarget.setPointerCapture(event.pointerId);
+    setDragging(true);
     setDraft(drawing);
+  };
+  const editAt = (current: Edit, p: DrawingPoint): Drawing => {
+    if (current.handle === "move")
+      return moveDrawing(current.original, current.start, p);
+    const original = current.original[current.handle];
+    return {
+      ...current.original,
+      [current.handle]: {
+        logical: original.logical + (p.logical - current.start.logical),
+        price: original.price + (p.price - current.start.price),
+      },
+    };
   };
   const move = (event: ReactPointerEvent<SVGSVGElement>) => {
     if (down.current && event.pointerId !== down.current.pointer) return;
+    if (down.current) event.preventDefault();
     const p = point(event);
     if (!p) return;
     if (edit) {
-      const moved =
-        edit.handle === "move"
-          ? moveDrawing(edit.original, edit.start, p)
-          : { ...edit.original, [edit.handle]: p };
+      const moved = editAt(edit, p);
       if (moved.from.price > 0 && moved.to.price > 0)
         setEdit({ ...edit, preview: moved });
     } else if (draft) setDraft({ ...draft, to: p });
@@ -256,20 +303,42 @@ export default function ChartDrawings({
         event.clientX - down.current.x,
         event.clientY - down.current.y,
       ) >= 4;
+    releasePointer();
     down.current = null;
+    setDragging(false);
     if (edit) {
-      if (moved) dispatch({ type: "update", drawing: edit.preview });
+      const p = point(event);
+      const result = p ? editAt(edit, p) : edit.preview;
+      if (moved && result.from.price > 0 && result.to.price > 0)
+        dispatch({ type: "update", drawing: result });
       setEdit(null);
-    } else if (draft && moved) finish(draft);
+    } else if (draft && moved)
+      finish({ ...draft, to: point(event) ?? draft.to });
   };
   const beginEdit = (
     event: ReactPointerEvent<SVGElement>,
     drawing: Drawing,
     handle: Edit["handle"],
   ) => {
-    if (tool !== "cursor" || event.button !== 0) return;
+    if (tool !== "cursor" || event.button !== 0 || down.current) return;
     const p = point(event);
     if (!p || !svg.current) return;
+    if (
+      handle !== "move" &&
+      !["horizontal", "vertical"].includes(drawing.kind)
+    ) {
+      // Enlarged targets may overlap on short lines: choose the nearest endpoint.
+      const a = screen(drawing.from),
+        b = screen(drawing.to);
+      const bounds = svg.current.getBoundingClientRect();
+      const x = event.clientX - bounds.left,
+        y = event.clientY - bounds.top;
+      if (a && b)
+        handle =
+          Math.hypot(x - a.x, y - a.y) < Math.hypot(x - b.x, y - b.y)
+            ? "from"
+            : "to";
+    }
     event.stopPropagation();
     event.preventDefault();
     callbacks.current();
@@ -279,6 +348,7 @@ export default function ChartDrawings({
       y: event.clientY,
       pointer: event.pointerId,
     };
+    setDragging(true);
     setSelected(drawing.id);
     setColor(drawing.color);
     setEdit({ original: drawing, start: p, preview: drawing, handle });
@@ -421,18 +491,28 @@ export default function ChartDrawings({
                 : [["to", b]]),
             ] as ["from" | "to", { x: number; y: number }][]
           ).map(([handle, p]) => (
-            <circle
-              key={handle}
-              cx={p.x}
-              cy={p.y}
-              r={5 * textScale}
-              fill="var(--panel)"
-              stroke={stroke}
-              strokeWidth="2"
-              pointerEvents="all"
-              className="drawing-handle"
-              onPointerDown={(event) => beginEdit(event, drawing, handle)}
-            />
+            <g key={handle} className="drawing-endpoint">
+              <circle
+                cx={p.x}
+                cy={p.y}
+                r={Math.max(22, 12 * textScale)}
+                fill="transparent"
+                pointerEvents="all"
+                className="drawing-handle"
+                data-handle={handle}
+                aria-label={`Resize ${handle === "from" ? "start" : "end"} of ${drawing.kind}`}
+                onPointerDown={(event) => beginEdit(event, drawing, handle)}
+              />
+              <circle
+                cx={p.x}
+                cy={p.y}
+                r={Math.max(6, 5 * textScale)}
+                fill="var(--panel)"
+                stroke={stroke}
+                strokeWidth="2"
+                pointerEvents="none"
+              />
+            </g>
           ))}
       </g>
     );
@@ -574,7 +654,7 @@ export default function ChartDrawings({
       </div>
       <svg
         ref={svg}
-        className={`drawing-overlay ${tool !== "cursor" ? "is-placing" : ""}`}
+        className={`drawing-overlay ${tool !== "cursor" ? "is-placing" : ""} ${selected || edit ? "is-editing" : ""}`}
         width={size.width}
         height={size.height}
         role="group"
@@ -582,9 +662,19 @@ export default function ChartDrawings({
         onPointerDown={start}
         onPointerMove={move}
         onPointerUp={up}
-        onPointerCancel={cancel}
+        onPointerCancel={(event) => {
+          if (down.current?.pointer === event.pointerId) cancel();
+        }}
+        onLostPointerCapture={(event) => {
+          if (down.current?.pointer === event.pointerId) cancel();
+        }}
       >
-        {!hidden && all.map(renderDrawing)}
+        {!hidden &&
+          [...all]
+            .sort(
+              (a, b) => Number(a.id === selected) - Number(b.id === selected),
+            )
+            .map(renderDrawing)}
       </svg>
       {tool !== "cursor" && (
         <div className="drawing-instruction" role="status">

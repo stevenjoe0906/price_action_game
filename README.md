@@ -189,6 +189,8 @@ The free chart includes a custom drawing toolbar built on Lightweight Charts. It
 
 The dotted price and bar-count crosshair guides remain visible while hovering over the plot with any drawing tool selected, during placement, and while editing drawings or dragging orders. They track chart coordinates through zoom, pan, resizing, theme, and display-size changes. Bar labels in blank space use logical bar positions without loading future candles. Guides clear when leaving the plot or hovering over chart menus.
 
+Selected drawing endpoints have invisible grab targets at least 44px wide around the small visible dots. Grab an endpoint to resize while keeping the opposite endpoint fixed; grabbing off-center preserves the grab offset. The selected drawing stays above order-line drag targets. During placement or editing, touch gestures on the chart do not scroll the page, and active drags capture the pointer. Release commits the final location; Escape, pointer cancellation, or lost capture restores the original drawing and unlocks scrolling.
+
 Annotations belong to the current chart and reset when you start a new turn or repick. They do not affect orders or fills and are not saved after refresh. Measurements use normalized prices; percentage changes are identical to those of the underlying prices. They cannot reveal future candles.
 
 ## Persistence
