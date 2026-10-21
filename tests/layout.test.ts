@@ -6,12 +6,12 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { createRoot } from "react-dom/client";
 import TradingGame from "../components/TradingGame";
 
-test("turn progress belongs to statistics and chart/activity share the left workspace column", () => {
+test("turn progress belongs to sidebar statistics and chart/activity share the left workspace column", () => {
   const dom = new JSDOM(renderToStaticMarkup(createElement(TradingGame)));
   try {
     const doc = dom.window.document;
     assert.equal(doc.querySelectorAll(".game-progress").length, 1);
-    assert.ok(doc.querySelector(".metrics-strip .game-progress"));
+    assert.ok(doc.querySelector(".game-status .game-progress"));
     assert.equal(doc.querySelector("header .game-progress"), null);
     assert.equal(doc.querySelector(".game-heading"), null);
     assert.ok(
@@ -75,12 +75,10 @@ test("turn progress belongs to statistics and chart/activity share the left work
     );
     assert.equal(doc.querySelector(".pane-switch"), null);
     assert.equal(doc.querySelector('[role="progressbar"]'), null);
-    assert.deepEqual(
-      [...doc.querySelectorAll(".metrics-strip .metric > span")].map(
-        (node) => node.textContent,
-      ),
-      ["Progress", "Balance", "PnL", "uPnL", "Win rate", "Trades", "Fees"],
-    );
+    assert.equal(doc.querySelector(".metrics-strip"), null);
+    assert.ok(doc.querySelector(".turn-status + .game-status"));
+    assert.ok(doc.querySelector(".game-status .restart-game"));
+    assert.equal(doc.querySelector(".brand small"), null);
     assert.ok(doc.querySelector(".repick.next-button"));
   } finally {
     dom.window.close();

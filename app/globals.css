@@ -3161,3 +3161,82 @@ select {
     padding: 12px;
   }
 }
+
+/* Compact header; account statistics now live in the scrolling sidebar. */
+.topbar {
+  min-height: 44px;
+  padding: 4px 0;
+  gap: 8px;
+}
+.brand {
+  font-size: 1.125rem;
+  gap: 7px;
+  letter-spacing: -0.4px;
+  white-space: nowrap;
+}
+.brand-symbol {
+  color: var(--accent);
+  display: flex;
+}
+.topbar .header-actions {
+  gap: 6px;
+}
+.topbar .header-actions button {
+  min-height: 32px;
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+.game-status {
+  padding: 20px;
+}
+.game-status .game-progress strong {
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+.game-status .game-progress strong span {
+  color: var(--muted);
+}
+.restart-game {
+  margin-top: 14px;
+}
+.restart-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 20px;
+}
+.inline-settings {
+  display: inline;
+  padding: 0;
+  min-height: auto;
+  color: var(--accent);
+  font-size: inherit;
+  text-decoration: underline;
+}
+@media (max-width: 540px) {
+  .topbar .header-actions button {
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+  .topbar .header-actions .text-button span {
+    display: none;
+  }
+}
+
+.trading-sidebar > .turn-status {
+  flex: 0 0 auto;
+  border-bottom: 1px solid var(--border);
+}
+.game-status .panel-title {
+  min-height: 30px;
+  margin-bottom: 8px;
+  padding: 0;
+}
+.game-status > .detail {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 0;
+}

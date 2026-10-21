@@ -24,6 +24,7 @@ export type Summary = {
   net: number;
   fees: number;
   liquidated: boolean;
+  restarted?: boolean;
   turns: Turn[];
   trades: Trade[];
 };

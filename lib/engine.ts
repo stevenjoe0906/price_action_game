@@ -1,3 +1,4 @@
+import { profitLossRatio } from "./trade-ratio";
 export const FEE = 0.0005;
 export const SLIPPAGE = 0.0001;
 export const MAINTENANCE = 0.005;
@@ -12,6 +13,8 @@ export type Candle = {
   close: number;
 };
 export type Order = {
+  /** Entry-plan reward/risk, quantity-weighted for additions; unchanged by exit edits. */
+  plannedRatio?: number | null;
   id: number;
   side: Side;
   type: OrderType;
@@ -24,6 +27,8 @@ export type Order = {
   leverage: number;
 };
 export type Position = {
+  /** Entry-plan reward/risk, quantity-weighted for additions; unchanged by exit edits. */
+  plannedRatio?: number | null;
   side: Side;
   qty: number;
   entry: number;
@@ -36,6 +41,8 @@ export type Position = {
   initialQty: number;
 };
 export type Trade = {
+  /** Entry-plan reward/risk, quantity-weighted for additions; unchanged by exit edits. */
+  plannedRatio?: number | null;
   id: number;
   side: Side;
   entry: number;
@@ -187,6 +194,7 @@ function close(g: Game, qty: number, price: number, reason: string) {
       opened: p.opened,
       closed: g.time,
       reason,
+      plannedRatio: p.plannedRatio ?? null,
     });
     g.position = null;
   }
@@ -233,6 +241,12 @@ function execute(g: Game, o: Order, price: number): boolean {
       gross: p?.gross ?? 0,
       fees: (p?.fees ?? 0) + paid,
       initialQty: (p?.initialQty ?? 0) + qty,
+      plannedRatio: !p
+        ? (o.plannedRatio ?? null)
+        : p.plannedRatio != null && o.plannedRatio != null
+          ? (p.plannedRatio * p.initialQty + o.plannedRatio * qty) /
+            (p.initialQty + qty)
+          : null,
     };
   }
   Object.assign(g, candidate);
@@ -295,7 +309,14 @@ export function submitOrder(original: Game, input: OrderInput): Game {
   const qty = (g.balance * input.risk) / 100 / Math.abs(sizingEntry - input.sl);
   if (!Number.isFinite(qty) || qty <= 0)
     throw new Error("Insufficient balance or invalid stop distance.");
-  const o: Order = { id: g.nextId++, ...input, entry, qty, triggered: false };
+  const o: Order = {
+    id: g.nextId++,
+    ...input,
+    entry,
+    qty,
+    triggered: false,
+    plannedRatio: profitLossRatio(input.side, sizingEntry, input.sl, input.tp),
+  };
   if (input.type === "market") {
     if (!execute(g, o, entry)) throw new Error(g.notice);
   } else {

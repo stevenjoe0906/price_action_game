@@ -76,6 +76,7 @@ The defaults in `compose.yaml` and `.env.example` are `BIND_ADDRESS=127.0.0.1` a
    ```
 
    The host Nginx installation must include `/etc/nginx/conf.d/*.conf` inside its `http {}` context. Permit inbound TCP port 80 over IPv4 and IPv6. The server needs working IPv6 networking for direct IPv6 origin connections.
+
 3. In Cloudflare DNS, create a proxied (orange cloud) **A** record for your server's public IPv4 address. Add a proxied **AAAA** record if the server also has a working public IPv6 address.
 4. Set **SSL/TLS → Overview → Flexible** for this certificate-free HTTP origin. Cloudflare serves HTTPS to visitors, while Cloudflare-to-origin traffic remains unencrypted HTTP. Proxied DNS alone does not eliminate origin TLS requirements under Full or Full (strict). See [Cloudflare Flexible mode](https://developers.cloudflare.com/ssl/origin-configuration/ssl-modes/flexible/).
 5. If desired, enable **Always Use HTTPS** at Cloudflare. Do not add an HTTP-to-HTTPS redirect at the origin with Flexible mode; that causes a redirect loop.
@@ -246,3 +247,11 @@ The borderless expand icon in the chart header hides the right pane and lets the
 The header actions are How to play, Statistics, Settings, and Theme; the first two show icons/text and the last two are icons only, all without borders. Blind-mode help is a question-mark icon beside the instrument, and the chart-width icon stays at the far right.
 
 Historical loading shares parsed raw archives across timeframes and deduplicates concurrent requests. Raw history is bounded to eight months in memory, with 64 aggregated interval/month entries. Long-interval history loads consecutive archives in batches of up to four, preserving month gaps and the 500–1,500 initial-candle rule. Short intervals request only the history they need. Loading messages show progress; actual startup time still depends on archive availability, server/network speed and the chosen interval.
+
+## Planned TP/SL ratios and restarting
+
+The order ticket shows estimated gross profit:loss below estimated margin, always with loss normalized to 1 (for example, `5:1`). Market entries use the estimated slipped fill; stop-limit entries use the limit price. Missing TP or invalid directional prices show `—`. These estimates exclude fees and exit slippage.
+
+Each trade retains its entry-plan ratio for Statistics and CSV exports. Additions use a quantity-weighted average of entry plans across that trade; changing or removing position protection does not rewrite the original plan. A combined trade has no defined ratio if an entry lacks a TP. This turn and This game show the arithmetic mean of defined trade ratios, including the open position and excluding pending orders. Older records without this metadata show `—` and are excluded from averages.
+
+Account statistics now appear in **This game**, below **This turn**, rather than in a top status strip. **Restart game** opens a confirmation dialog. Confirming cancels pending orders, closes any open position at the last visible price using normal execution costs, and saves the record in Statistics before resetting to turn 1 and $10,000. Restarted games are labeled in history and exports and share the existing ten-game browser history limit. If data loading or saving fails, the current game remains available. An already completed, saved game is not archived again.

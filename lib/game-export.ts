@@ -1,3 +1,4 @@
+import { averageRatio } from "./trade-ratio";
 import { INITIAL_BALANCE } from "./engine";
 import type { Summary } from "./storage";
 
@@ -63,11 +64,16 @@ export function summaryCsv(s: Summary) {
       "profit_factor",
       "turn_end_drawdown_percent",
       "liquidated",
+      "avg_planned_tp_sl_ratio",
     ],
     [
       s.id,
       s.date,
-      s.id === "current" ? "in_progress" : "completed",
+      s.id === "current"
+        ? "in_progress"
+        : s.restarted
+          ? "restarted"
+          : "completed",
       INITIAL_BALANCE,
       s.balance,
       s.net,
@@ -82,6 +88,7 @@ export function summaryCsv(s: Summary) {
       m.profitFactor === Infinity ? "Infinity" : m.profitFactor,
       m.drawdown,
       String(s.liquidated),
+      averageRatio(s.trades),
     ],
   ]);
 }
@@ -113,6 +120,7 @@ export function tradesCsv(s: Summary) {
       "fees_usdt",
       "net_pnl_usdt",
       "exit_reason",
+      "planned_tp_sl_ratio",
     ],
     ...s.trades.map((t, i) => {
       const turn = turns.find((v) => i >= v.start && i < v.end)?.turn;
@@ -137,6 +145,7 @@ export function tradesCsv(s: Summary) {
         t.fees,
         t.net,
         t.reason,
+        t.plannedRatio,
       ];
     }),
   ]);
@@ -181,7 +190,7 @@ export function summaryCardSvg(s: Summary) {
     ["TURN-END DRAWDOWN", `${m.drawdown.toFixed(2)}%`],
     ["TURNS", `${s.turns.length} / 20`],
   ];
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="780" viewBox="0 0 1080 780"><rect width="1080" height="780" rx="24" fill="#101619"/><g font-family="Arial, sans-serif" fill="#e5edef"><text x="48" y="62" font-size="22" letter-spacing="3" fill="#72d7b0">PRICE ACTION · PRACTICE JOURNAL</text><text x="48" y="106" font-size="18" fill="#97a5ab">${escape(s.date.slice(0, 10))} · ${s.id === "current" ? "Game in progress · realized results" : s.liquidated ? "Game completed · liquidated" : "Game completed"}</text><text x="48" y="163" font-size="18" fill="#97a5ab">${s.id === "current" ? "CURRENT" : "FINAL"} BALANCE</text><text x="48" y="230" font-size="60" font-weight="700">$${number(s.balance)}</text>${metrics
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="780" viewBox="0 0 1080 780"><rect width="1080" height="780" rx="24" fill="#101619"/><g font-family="Arial, sans-serif" fill="#e5edef"><text x="48" y="62" font-size="22" letter-spacing="3" fill="#72d7b0">PRICE ACTION · PRACTICE JOURNAL</text><text x="48" y="106" font-size="18" fill="#97a5ab">${escape(s.date.slice(0, 10))} · ${s.id === "current" ? "Game in progress · realized results" : s.liquidated ? "Game completed · liquidated" : s.restarted ? "Game restarted · record saved" : "Game completed"}</text><text x="48" y="163" font-size="18" fill="#97a5ab">${s.id === "current" ? "CURRENT" : "FINAL"} BALANCE</text><text x="48" y="230" font-size="60" font-weight="700">$${number(s.balance)}</text>${metrics
     .map(([label, value], i) => {
       const x = 48 + (i % 4) * 252,
         y = 295 + Math.floor(i / 4) * 116;

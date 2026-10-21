@@ -1,5 +1,6 @@
 "use client";
 import dynamic from "next/dynamic";
+import { averageRatio, formatRatio, profitLossRatio } from "@/lib/trade-ratio";
 import SummaryExport from "./SummaryExport";
 import { chartPrice } from "@/lib/chart-display";
 import ResizableChartPanels from "./ResizableChartPanels";
@@ -278,7 +279,7 @@ export default function TradingGame() {
   const [positionSL, setPositionSL] = useState("");
   const [positionTP, setPositionTP] = useState("");
   const [modal, setModal] = useState<
-    "settings" | "history" | "rules" | "chart-help" | null
+    "settings" | "history" | "rules" | "chart-help" | "restart" | null
   >(null);
   const [saved, setSaved] = useState<Summary[]>([]);
   const [selected, setSelected] = useState<Summary | null>(null);
@@ -365,7 +366,7 @@ export default function TradingGame() {
       hold.current = null;
     }
   }, [modal]);
-  const loadTurn = async (mode: "new" | "next" | "repick") => {
+  const loadTurn = async (mode: "new" | "next" | "repick" | "restart") => {
     if (locked.current) return;
     if (
       mode === "repick" &&
@@ -395,6 +396,25 @@ export default function TradingGame() {
           notice: "",
         };
       else {
+        if (mode === "restart" && gameRef.current && !summarySaved.current) {
+          const ended = finishTurn(gameRef.current);
+          const market = sessionRef.current;
+          if (market)
+            ended.turns = ended.turns.map((turn) =>
+              turn.number === ended.turn
+                ? { ...turn, factor: market.factor, interval: market.interval }
+                : turn,
+            );
+          const archive = { ...summarize(ended), restarted: true };
+          try {
+            setSaved(saveSummary(archive));
+          } catch {
+            // Preserve the current game when durable storage cannot be written.
+            throw new Error(
+              "Could not save the trade record. Restart canceled; free browser storage and try again.",
+            );
+          }
+        }
         g = createGame(last.close, last.time);
         summarySaved.current = false;
       }
@@ -796,14 +816,11 @@ export default function TradingGame() {
     <main className={`app-shell ${game ? "has-session" : ""}`}>
       <header className="topbar">
         <a href="/" className="brand" aria-label="Price Action home">
-          <span className="brand-mark">
-            <i />
-            <i />
-            <i />
+          <span className="brand-symbol">
+            <Icon name="chart" size={22} />
           </span>
           <span>
             price<span className="brand-light">action</span>
-            <small>TRADING LAB</small>
           </span>
         </a>
         <div className="header-actions">
@@ -850,49 +867,6 @@ export default function TradingGame() {
           </button>
         </div>
       </header>
-      <section className="metrics-strip" aria-label="Game statistics">
-        <div className="metric turn-metric">
-          <span>Progress</span>
-          <GameProgress game={game} />
-          <small>20 turns per game</small>
-        </div>
-        <Metric
-          label="Balance"
-          value={`$${money(balance)}`}
-          sub="USDT · Cross margin"
-        />
-        <Metric
-          label="PnL"
-          value={signed(balance - INITIAL_BALANCE)}
-          className={tone(balance - INITIAL_BALANCE)}
-          sub="Net of trading fees"
-        />
-        <Metric
-          label="uPnL"
-          value={signed(upnl)}
-          className={tone(upnl)}
-          sub="Current open position"
-        />
-        <Metric
-          label="Win rate"
-          value={
-            closed.length
-              ? `${((wins / closed.length) * 100).toFixed(1)}%`
-              : "—"
-          }
-          sub={`${wins} wins / ${closed.length} closed trades`}
-        />
-        <Metric
-          label="Trades"
-          value={String(closed.length).padStart(2, "0")}
-          sub={game?.position ? "1 position open" : "No open positions"}
-        />
-        <Metric
-          label="Fees"
-          value={`$${money(game?.fees ?? 0)}`}
-          sub="0.05% maker / taker"
-        />
-      </section>
       {error && (
         <div className="error-banner" role="alert">
           <Icon name="info" />
@@ -1345,6 +1319,17 @@ export default function TradingGame() {
                     : game?.status === "finished"
                       ? "Review your game, then come back with a fresh perspective."
                       : "Read the context, find your entry, and define your risk."}
+                  {(!game || active) && (
+                    <>
+                      {" "}
+                      <button
+                        className="text-button inline-settings"
+                        onClick={openSettings}
+                      >
+                        Settings
+                      </button>
+                    </>
+                  )}
                 </p>
                 <button
                   className="secondary-button full"
@@ -1453,6 +1438,19 @@ export default function TradingGame() {
                   <div>
                     <span>Est. margin</span>
                     <strong>${money((qty * plannedEntry) / leverage)}</strong>
+                  </div>
+                  <div title="Planned gross profit : loss, before fees and exit slippage">
+                    <span>Est. TP/SL ratio</span>
+                    <strong>
+                      {formatRatio(
+                        profitLossRatio(
+                          side,
+                          plannedEntry,
+                          +sl,
+                          tp.trim() ? +tp : null,
+                        ),
+                      )}
+                    </strong>
                   </div>
                 </div>
                 <button
@@ -1563,6 +1561,15 @@ export default function TradingGame() {
               label="Fees paid"
               value={`$${money(game ? game.fees - game.feeBaseline : 0)}`}
             />
+            <Detail
+              label="Avg. TP/SL ratio"
+              value={formatRatio(
+                averageRatio([
+                  ...closed.slice(game?.tradeBaseline ?? 0),
+                  ...(game?.position ? [game.position] : []),
+                ]),
+              )}
+            />
             <div className="turn-actions">
               {game?.status === "turn-ended" ? (
                 <button
@@ -1592,6 +1599,58 @@ export default function TradingGame() {
               )}
             </div>
           </section>
+          <section className="panel game-status" aria-label="Game statistics">
+            <div className="panel-title">
+              <h2>This game</h2>
+              <GameProgress game={game} />
+            </div>
+            <Detail
+              label="Status"
+              value={
+                !game
+                  ? "Not started"
+                  : game.status === "active"
+                    ? "In progress"
+                    : game.status === "turn-ended"
+                      ? "Turn complete"
+                      : "Complete"
+              }
+            />
+            <Detail label="Balance" value={`$${money(balance)}`} />
+            <Detail
+              label="PnL"
+              value={signed(balance - INITIAL_BALANCE)}
+              className={tone(balance - INITIAL_BALANCE)}
+            />
+            <Detail label="uPnL" value={signed(upnl)} className={tone(upnl)} />
+            <Detail
+              label="Win rate"
+              value={
+                closed.length
+                  ? `${((wins / closed.length) * 100).toFixed(1)}%`
+                  : "—"
+              }
+            />
+            <Detail label="Trades" value={String(closed.length)} />
+            <Detail label="Fees" value={`$${money(game?.fees ?? 0)}`} />
+            <Detail
+              label="Avg. TP/SL ratio"
+              value={formatRatio(
+                averageRatio([
+                  ...closed,
+                  ...(game?.position ? [game.position] : []),
+                ]),
+              )}
+            />
+            <button
+              className="secondary-button full restart-game"
+              disabled={!game || loading}
+              onClick={() => setModal("restart")}
+            >
+              <Icon name="refresh" size={16} />
+              Restart game
+            </button>
+          </section>
         </aside>
       </div>
       {toast && (
@@ -1606,6 +1665,30 @@ export default function TradingGame() {
             <Icon name="close" size={15} />
           </button>
         </div>
+      )}
+      {modal === "restart" && (
+        <Modal title="Restart game?" close={() => setModal(null)}>
+          <p>
+            Your open position will close at the last visible price and pending
+            orders will be canceled. This game’s trades will be saved in
+            Statistics. A new game starts at $10,000.
+          </p>
+          <div className="restart-actions">
+            <button className="secondary-button" onClick={() => setModal(null)}>
+              Keep playing
+            </button>
+            <button
+              className="primary-button"
+              onClick={() => {
+                setModal(null);
+                stopHold();
+                void loadTurn("restart");
+              }}
+            >
+              Save record & restart
+            </button>
+          </div>
+        </Modal>
       )}
       {modal === "chart-help" && (
         <Modal title="Chart help" close={() => setModal(null)}>
@@ -1782,7 +1865,7 @@ export default function TradingGame() {
           subtitle={
             selected
               ? "Game summary · net results include all trading fees"
-              : "Your last 10 completed games, saved on this browser."
+              : "Your last 10 completed or restarted games, saved on this browser."
           }
           close={() => setModal(null)}
           wide
@@ -1814,7 +1897,11 @@ export default function TradingGame() {
                     </strong>
                     <small>
                       {s.turns.length} turns · {s.trades.length} trades
-                      {s.liquidated ? " · Liquidated" : ""}
+                      {s.liquidated
+                        ? " · Liquidated"
+                        : s.restarted
+                          ? " · Restarted"
+                          : ""}
                     </small>
                   </span>
                   <strong className={tone(s.net)}>
@@ -1915,25 +2002,6 @@ export default function TradingGame() {
         </Modal>
       )}
     </main>
-  );
-}
-function Metric({
-  label,
-  value,
-  sub,
-  className = "",
-}: {
-  label: string;
-  value: string;
-  sub: string;
-  className?: string;
-}) {
-  return (
-    <div className="metric">
-      <span>{label}</span>
-      <strong className={className}>{value}</strong>
-      <small>{sub}</small>
-    </div>
   );
 }
 function Detail({
@@ -2050,6 +2118,10 @@ function SummaryView({
           label="Profit factor"
           value={losses ? (profits / losses).toFixed(2) : profits ? "∞" : "—"}
         />
+        <Detail
+          label="Avg. TP/SL ratio"
+          value={formatRatio(averageRatio(s.trades))}
+        />
         <Detail label="Total fees" value={`$${money(s.fees)}`} />
         <Detail label="Turn-end drawdown" value={`${drawdown.toFixed(2)}%`} />
         <Detail label="Turns" value={`${s.turns.length} / 20`} />
@@ -2119,6 +2191,7 @@ function SummaryView({
                   <th>Side</th>
                   <th>Entry</th>
                   <th>Final exit</th>
+                  <th>Planned TP/SL</th>
                   <th>Net P&L</th>
                   <th>Exit reason</th>
                 </tr>
@@ -2129,6 +2202,7 @@ function SummaryView({
                     <td>{t.side}</td>
                     <td>{price(t.entry)}</td>
                     <td>{price(t.exit)}</td>
+                    <td>{formatRatio(t.plannedRatio)}</td>
                     <td className={tone(t.net)}>{signed(t.net)}</td>
                     <td>{t.reason}</td>
                   </tr>
