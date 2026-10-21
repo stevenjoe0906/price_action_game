@@ -39,9 +39,18 @@ test("turn progress belongs to statistics and chart/activity share the left work
     );
     assert.equal(workspace.children[1].querySelector(".activity-panel"), null);
     assert.equal(doc.querySelector("footer"), null);
-    assert.ok(
-      doc.querySelector('.chart-footer a[href="https://www.tradingview.com/"]'),
+    assert.equal(doc.querySelector(".chart-footer"), null);
+    assert.ok(doc.querySelector('button[aria-label="Chart help"]'));
+    assert.ok(doc.querySelector("aside .turn-status .finish-button"));
+    assert.equal(doc.querySelector(".replay-toolbar .finish-button"), null);
+    const playback = doc.querySelector(".playback-buttons")!;
+    assert.deepEqual(
+      [...playback.children].map(
+        (node) => node.getAttribute("aria-label") || node.textContent?.trim(),
+      ),
+      ["Play replay", "Next→", "Replay speed", "Repick", "Chart help"],
     );
+    assert.equal(doc.querySelector(".pane-switch"), null);
     assert.equal(
       doc.querySelector('[role="progressbar"]')!.getAttribute("aria-valuemax"),
       "20",

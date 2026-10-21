@@ -1,6 +1,7 @@
 "use client";
 import dynamic from "next/dynamic";
 import ResizableChartPanels from "./ResizableChartPanels";
+import { useTouchLayout } from "@/lib/use-touch-layout";
 import PositionProtection from "./PositionProtection";
 import { createReplayTimer } from "@/lib/replay-timer";
 import {
@@ -126,6 +127,12 @@ function Icon({ name, size = 18 }: { name: string; size?: number }) {
         <path d="M5 21V3m0 1c5-3 9 4 15 0v10c-6 4-10-3-15 0" />
       </>
     ),
+    help: (
+      <>
+        <circle cx="12" cy="12" r="9" />
+        <path d="M9 9a3 3 0 0 1 6 0c0 2-3 2-3 4m0 4h.01" />
+      </>
+    ),
     info: (
       <>
         <circle cx="12" cy="12" r="9" />
@@ -247,6 +254,8 @@ export default function TradingGame() {
   const locked = useRef(false);
   const [playing, setPlaying] = useState(false);
   const [chartExpanded, setChartExpanded] = useState(false);
+  const touchLayout = useTouchLayout();
+  const [activityVisible, setActivityVisible] = useState(false);
   const [speed, setSpeed] = useState(1);
   const [ticket, setTicket] = useState(false);
   const [side, setSide] = useState<Side>("long");
@@ -258,9 +267,9 @@ export default function TradingGame() {
   const [leverage, setLeverage] = useState(10);
   const [positionSL, setPositionSL] = useState("");
   const [positionTP, setPositionTP] = useState("");
-  const [modal, setModal] = useState<"settings" | "history" | "rules" | null>(
-    null,
-  );
+  const [modal, setModal] = useState<
+    "settings" | "history" | "rules" | "chart-help" | null
+  >(null);
   const [saved, setSaved] = useState<Summary[]>([]);
   const [selected, setSelected] = useState<Summary | null>(null);
   const [error, setError] = useState("");
@@ -873,7 +882,11 @@ export default function TradingGame() {
         </div>
       )}
       <div className="workspace">
-        <ResizableChartPanels expanded={chartExpanded}>
+        <ResizableChartPanels
+          expanded={chartExpanded}
+          touchLayout={touchLayout}
+          activityVisible={activityVisible}
+        >
           <section
             className={`chart-panel panel ${chartExpanded ? "is-expanded" : ""}`}
           >
@@ -900,10 +913,14 @@ export default function TradingGame() {
                   {session?.interval ?? settings.interval}
                 </span>
               </div>
-              <div className="blind-badge">
+              <div
+                className="blind-badge"
+                tabIndex={0}
+                aria-describedby="blind-mode-help"
+              >
                 <Icon name="shield" size={14} />
                 <span>Blind mode</span>
-                <span className="tooltip">
+                <span className="tooltip" id="blind-mode-help" role="tooltip">
                   Prices normalized to 100. Dates hidden. Symbol revealed after
                   the turn.
                 </span>
@@ -1075,8 +1092,7 @@ export default function TradingGame() {
                     </option>
                   ))}
                 </select>
-              </div>
-              <div className="turn-buttons">
+
                 <button
                   className="text-button repick"
                   disabled={!active || !!game?.traded || loading}
@@ -1090,58 +1106,33 @@ export default function TradingGame() {
                   <Icon name="refresh" size={15} />
                   Repick
                 </button>
-                {game?.status === "turn-ended" ? (
-                  <button
-                    className="primary-button"
-                    disabled={loading}
-                    onClick={() => void loadTurn("next")}
-                  >
-                    Next turn <Icon name="arrow" size={16} />
-                  </button>
-                ) : game?.status === "finished" ? (
-                  <button
-                    className="primary-button"
-                    disabled={loading}
-                    onClick={() => void loadTurn("new")}
-                  >
-                    New game <Icon name="arrow" size={16} />
-                  </button>
-                ) : (
-                  <button
-                    className="finish-button"
-                    disabled={!active || loading}
-                    onClick={finish}
-                  >
-                    <Icon name="flag" size={15} />
-                    Finish turn
-                  </button>
-                )}
+                <button
+                  className="icon-button chart-help-button"
+                  aria-label="Chart help"
+                  title="Chart help"
+                  onClick={() => setModal("chart-help")}
+                >
+                  <Icon name="help" />
+                </button>
               </div>
-            </div>
-            <div className="chart-footer">
-              <span>
-                <i className="status-dot" />
-                {game?.status === "turn-ended"
-                  ? "Turn complete · no more candles revealed"
-                  : game?.status === "finished"
-                    ? "Game complete"
-                    : session?.source === "local"
-                      ? "Local history · Binance Futures"
-                      : "Historical data · Binance Futures"}
-              </span>
-              <span>
-                <kbd>space</kbd> play / pause{" "}
-                <span className="footer-separator">·</span> Hold <kbd>→</kbd> to
-                advance
-              </span>
-              <a
-                href="https://www.tradingview.com/"
-                target="_blank"
-                rel="noreferrer"
-                className="chart-attribution"
-              >
-                Charts by TradingView ↗
-              </a>
+              {touchLayout && (
+                <button
+                  className="pane-switch"
+                  aria-label={
+                    activityVisible ? "Show chart" : "Show orders and activity"
+                  }
+                  aria-pressed={activityVisible}
+                  onClick={() => {
+                    stopHold();
+                    setPlaying(false);
+                    setChartExpanded(false);
+                    setActivityVisible((visible) => !visible);
+                  }}
+                >
+                  <Icon name={activityVisible ? "chart" : "history"} />
+                  {activityVisible ? "Chart" : "Orders & activity"}
+                </button>
+              )}
             </div>
           </section>
           <section className="panel activity-panel">
@@ -1497,6 +1488,34 @@ export default function TradingGame() {
               label="Fees paid"
               value={`$${money(game ? game.fees - game.feeBaseline : 0)}`}
             />
+            <div className="turn-actions">
+              {game?.status === "turn-ended" ? (
+                <button
+                  className="primary-button"
+                  disabled={loading}
+                  onClick={() => void loadTurn("next")}
+                >
+                  Next turn <Icon name="arrow" size={16} />
+                </button>
+              ) : game?.status === "finished" ? (
+                <button
+                  className="primary-button"
+                  disabled={loading}
+                  onClick={() => void loadTurn("new")}
+                >
+                  New game <Icon name="arrow" size={16} />
+                </button>
+              ) : (
+                <button
+                  className="finish-button"
+                  disabled={!active || loading}
+                  onClick={finish}
+                >
+                  <Icon name="flag" size={15} />
+                  Finish turn
+                </button>
+              )}
+            </div>
           </section>
         </aside>
       </div>
@@ -1512,6 +1531,40 @@ export default function TradingGame() {
             <Icon name="close" size={15} />
           </button>
         </div>
+      )}
+      {modal === "chart-help" && (
+        <Modal title="Chart help" close={() => setModal(null)}>
+          <div className="chart-help-content">
+            <p>
+              {game?.status === "turn-ended"
+                ? "Turn complete · no more candles revealed"
+                : game?.status === "finished"
+                  ? "Game complete"
+                  : session?.source === "local"
+                    ? "Local history · Binance Futures"
+                    : "Historical data · Binance Futures"}
+            </p>
+            <p>
+              <kbd>Space</kbd> plays or pauses replay. Hold <kbd>→</kbd> or Next
+              to advance at the selected speed.
+            </p>
+            <p>
+              Repick chooses another chart without using a turn. It locks after
+              your first submitted order.
+            </p>
+            <p>
+              Finish turn cancels pending orders and closes your position at the
+              last displayed candle without revealing future candles.
+            </p>
+            <a
+              href="https://www.tradingview.com/"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Charts by TradingView ↗
+            </a>
+          </div>
+        </Modal>
       )}
       {modal === "settings" && (
         <Modal

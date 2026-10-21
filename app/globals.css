@@ -2809,3 +2809,93 @@ select {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* The header owns a higher stacking context than the OHLC row and chart. */
+.chart-heading {
+  z-index: 2;
+  overflow: visible;
+}
+.blind-badge:focus .tooltip,
+.blind-badge:focus-within .tooltip {
+  display: block;
+}
+.tooltip {
+  max-width: min(20rem, calc(100vw - 48px));
+  box-shadow: 0 5px 18px #0003;
+}
+.chart-help-button,
+.pane-switch {
+  border: 1px solid var(--border-strong);
+  background: var(--panel);
+  color: var(--text-secondary);
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.pane-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 8px 12px;
+  margin-left: auto;
+}
+.chart-help-content {
+  display: grid;
+  gap: 16px;
+  font-size: 0.9375rem;
+  line-height: 1.7;
+}
+.chart-help-content a {
+  color: var(--accent);
+}
+.turn-actions {
+  display: flex;
+  padding: 20px 18px;
+}
+.turn-actions > button {
+  width: 100%;
+  min-height: 44px;
+}
+.left-panel.is-touch {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.left-panel.is-touch > .panel-divider {
+  display: none;
+}
+.left-panel.is-touch.touch-chart > .chart-panel {
+  flex: 1 1 0;
+}
+.left-panel.is-touch.touch-chart > .activity-panel {
+  display: none;
+}
+.left-panel.is-touch.touch-activity > .chart-panel {
+  flex: 0 0 auto;
+  order: 2;
+  height: auto;
+  min-height: 0;
+}
+.left-panel.is-touch.touch-activity > .chart-panel > :not(.replay-toolbar) {
+  display: none;
+}
+.left-panel.is-touch.touch-activity > .activity-panel {
+  flex: 1 1 0;
+  order: 1;
+  height: auto;
+}
+.left-panel.is-touch .playback-buttons {
+  flex-wrap: wrap;
+}
+.left-panel.is-touch .playback-buttons button,
+.left-panel.is-touch .playback-buttons select {
+  min-height: 44px;
+}
+.left-panel.is-touch .chart-help-button {
+  min-width: 44px;
+}
+@media (max-width: 850px) {
+  .app-shell .left-panel.is-touch {
+    height: max(28rem, 70dvh);
+  }
+}

@@ -4,9 +4,13 @@ import { Children, useEffect, useRef, useState, type ReactNode } from "react";
 export default function ResizableChartPanels({
   children,
   expanded,
+  touchLayout = false,
+  activityVisible = false,
 }: {
   children: ReactNode;
   expanded: boolean;
+  touchLayout?: boolean;
+  activityVisible?: boolean;
 }) {
   const panels = Children.toArray(children);
   const host = useRef<HTMLDivElement>(null);
@@ -19,6 +23,13 @@ export default function ResizableChartPanels({
   const [ratio, setRatio] = useState<number | null>(null);
   const [dragging, setDragging] = useState(false);
   const [bounds, setBounds] = useState({ min: 0, max: 100, value: 70 });
+
+  useEffect(() => {
+    if (touchLayout) {
+      drag.current = null;
+      setDragging(false);
+    }
+  }, [touchLayout]);
 
   const geometry = () => {
     const node = host.current!,
@@ -43,7 +54,7 @@ export default function ResizableChartPanels({
   };
   useEffect(() => {
     const node = host.current;
-    if (!node) return;
+    if (!node || touchLayout) return;
     const measure = () => {
       const { available, min, max } = geometry();
       if (available <= 0) return;
@@ -65,9 +76,9 @@ export default function ResizableChartPanels({
     const observer = new ResizeObserver(measure);
     observer.observe(node);
     return () => observer.disconnect();
-  }, [ratio, expanded]);
+  }, [ratio, expanded, touchLayout]);
   useEffect(() => {
-    if (!dragging) return;
+    if (!dragging || touchLayout) return;
     const body = document.body;
     const cursor = body.style.cursor,
       selection = body.style.userSelect;
@@ -106,15 +117,15 @@ export default function ResizableChartPanels({
       window.removeEventListener("blur", end);
       window.removeEventListener("keydown", key, true);
     };
-  }, [dragging]);
+  }, [dragging, touchLayout]);
   return (
     <div
       ref={host}
-      className={`left-panel${dragging ? " is-resizing" : ""}`}
+      className={`left-panel${dragging ? " is-resizing" : ""}${touchLayout ? ` is-touch ${activityVisible ? "touch-activity" : "touch-chart"}` : ""}`}
       role="region"
       aria-label="Chart and order activity"
       style={
-        ratio === null
+        ratio === null || touchLayout
           ? undefined
           : {
               gridTemplateRows: `minmax(0, ${ratio}fr) 12px minmax(0, ${1 - ratio}fr)`,
@@ -126,17 +137,18 @@ export default function ResizableChartPanels({
         ref={divider}
         className="panel-divider"
         role="separator"
-        tabIndex={expanded ? -1 : 0}
+        hidden={touchLayout}
+        tabIndex={expanded || touchLayout ? -1 : 0}
         aria-label="Resize chart and order activity"
         aria-orientation="horizontal"
         aria-valuemin={Math.round(bounds.min)}
         aria-valuemax={Math.round(bounds.max)}
         aria-valuenow={Math.round(ratio === null ? bounds.value : ratio * 100)}
         aria-valuetext={`${Math.round(ratio === null ? bounds.value : ratio * 100)}% chart height`}
-        aria-disabled={expanded}
+        aria-disabled={expanded || touchLayout}
         title="Drag to resize · Up/Down to adjust · Double-click to reset"
         onPointerDown={(event) => {
-          if (expanded || event.button !== 0) return;
+          if (expanded || touchLayout || event.button !== 0) return;
           event.preventDefault();
           event.currentTarget.focus();
           drag.current = {
@@ -148,11 +160,12 @@ export default function ResizableChartPanels({
           setDragging(true);
         }}
         onDoubleClick={() => {
-          if (!expanded) setRatio(null);
+          if (!expanded && !touchLayout) setRatio(null);
         }}
         onKeyDown={(event) => {
           if (
             expanded ||
+            touchLayout ||
             !["ArrowUp", "ArrowDown", "Home", "End", "Enter"].includes(
               event.key,
             )

@@ -87,7 +87,7 @@ This specification incorporates the decisions agreed on October 20, 2026. The im
 
 - Left column: chart above a scrollable orders/activity panel. Right column: order ticket, position management, and current-turn metrics. Both columns fill the remaining browser height; use natural header/statistics heights rather than fixed viewport offsets. Resize automatically, with independent scrolling for overflow and stacked columns on narrow screens.
 - One statistics strip contains balance, game realized/unrealized PnL, turn count/progress, win rate, closed trade count, and fees. Do not show a separate turn-progress area.
-- Settings and summary/history controls in the header. Remove the page footer; show simulated-execution/slippage/no-funding information read-only inside Settings. Preserve visible TradingView attribution in the chart status bar.
+- Settings and summary/history controls in the header. Remove the page footer; show simulated-execution/slippage/no-funding information read-only inside Settings. Preserve the native TradingView chart logo and include an attribution link in Chart help.
 - Current-turn realized/unrealized PnL and fees.
 - Summary: final balance, net return, win rate, fees, profit factor, per-turn balance plot and results, and closed-trade review.
 - Fully closed position cycles count as trades; partial closes remain in the same trade. Win rate uses net results after fees. Label drawdown as measured at turn end.
@@ -104,3 +104,10 @@ This specification incorporates the decisions agreed on October 20, 2026. The im
 
 - Use a linear price scale and uniform native time-tick distribution; retain axis-aligned adaptive grid lines when zooming.
 - Add an Indicators control with EMA 20 enabled by default and a show/hide checkbox. Calculate from revealed closes only, update incrementally during replay, and rebuild on chart changes. No TradingView.com indicator catalog or Pine integration is required.
+
+## Issue #9 interface refinements
+
+- Keep the Blind mode tooltip above the OHLC row and chart, with keyboard-focus support.
+- Put Finish turn and the subsequent Next turn/New game actions below the sidebar current-turn metrics on every device.
+- Playback toolbar order: Play, Next, Speed, Repick, question-mark Chart help button. Replace the chart-footer row with the help dialog.
+- Only on touch-capable devices, initially hide Orders & activity and provide a Chart/Orders & activity switch at the right of the replay toolbar. Keep that toolbar visible in either pane and preserve chart/drawing state. Keep the existing draggable split on mouse-only computers regardless of viewport width.
