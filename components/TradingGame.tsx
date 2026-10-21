@@ -935,6 +935,7 @@ export default function TradingGame() {
                 <button
                   className="blind-badge icon-button"
                   aria-label="About blind mode"
+                  onClick={(event) => event.currentTarget.focus()}
                   aria-describedby="blind-mode-help"
                 >
                   <Icon name="help" size={18} />

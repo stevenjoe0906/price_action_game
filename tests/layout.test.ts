@@ -115,6 +115,15 @@ test("execution information is read-only in Settings and absent from the normal 
   try {
     act(() => root.render(createElement(TradingGame)));
     assert.ok(!doc.body.textContent!.includes(text));
+    const blindHelp = doc.querySelector<HTMLButtonElement>(
+      'button[aria-label="About blind mode"]',
+    )!;
+    act(() => blindHelp.click());
+    assert.equal(
+      doc.activeElement,
+      blindHelp,
+      "Touch help explicitly focuses the icon so its tooltip works on iOS",
+    );
     const expand = doc.querySelector<HTMLButtonElement>(
       'button[aria-label="Expand chart width"]',
     )!;
