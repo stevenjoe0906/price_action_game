@@ -111,3 +111,9 @@ This specification incorporates the decisions agreed on October 20, 2026. The im
 - Put Finish turn and the subsequent Next turn/New game actions below the sidebar current-turn metrics on every device.
 - Playback toolbar order: Play, Next, Speed, Repick, question-mark Chart help button. Replace the chart-footer row with the help dialog.
 - Only on touch-capable devices, initially hide Orders & activity and provide a Chart/Orders & activity switch at the right of the replay toolbar. Keep that toolbar visible in either pane and preserve chart/drawing state. Keep the existing draggable split on mouse-only computers regardless of viewport width.
+
+## Installable web app
+
+- Provide a statically exported web-app manifest with standalone display mode, root scope/start URL, 192px/512px PNG icons, a maskable icon, and Apple home-screen metadata/icon.
+- Support installation through compatible Android, iPad, and desktop browsers over HTTPS. Browser support determines whether installation produces a standalone app or a normal shortcut.
+- Retain free screen rotation, pinch zoom, and existing touch layout. Installation does not add offline caching or active-game persistence.

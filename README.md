@@ -114,6 +114,18 @@ docker run -d --name price-action-game --restart unless-stopped -p 127.0.0.1:300
 
 Local archives, Git metadata, environment files, and build outputs are excluded from the Docker context. The final image contains Nginx and the static export, not the Node.js build toolchain.
 
+## Install on a tablet or desktop
+
+The website includes a web-app manifest, 192px/512px app icons, a maskable icon, and an Apple touch icon. Its launch mode is **standalone**, so supporting browsers can open it from the home screen in a separate app window without the normal browser address bar. Installation does not lock screen orientation or disable pinch zoom.
+
+- **Android:** open your deployed **HTTPS** URL in Chrome, open the browser menu, and select **Install app** or **Add to Home screen** (the wording varies). Launch the installed app from its home-screen icon. If DuckDuckGo creates only a shortcut that opens a browser tab, install through Chrome instead; website configuration cannot force a browser to support standalone installation.
+- **iPad:** open the HTTPS website in Safari, then use **Share → Add to Home Screen**. Enable **Open as Web App** if offered. Launch the new home-screen icon.
+- **Desktop:** in a supported browser such as Chrome or Edge, use the browser's installation option.
+
+Installation requires HTTPS, except for localhost development. Your Cloudflare-proxied HTTPS domain works with the existing HTTP origin configuration; visiting a plain HTTP server IP from a tablet does not meet the installation requirement. See [MDN installation requirements](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Making_PWAs_installable).
+
+This change provides installation support, not a full offline mode. No service worker preloads the historical-data archives or caches application versions. A network connection is still needed to load the app/data, and the active game is still discarded on reload. Existing browser-local settings/history may not carry over when installing through a different browser. After deployment, reload the HTTPS page before installing. The static server and container Nginx serve the manifest with the correct MIME type and revalidation headers.
+
 ## Game rules
 
 - A new game starts with **10,000 USDT**. Balance carries across **20 turns**. Liquidation ends the game immediately. There is no manual End Game button.

@@ -293,6 +293,9 @@ export default function TradingGame() {
   }, [settings.displaySize]);
   useEffect(() => {
     document.documentElement.dataset.theme = settings.theme;
+    document
+      .querySelector('meta[name="theme-color"]')
+      ?.setAttribute("content", CHART_THEMES[settings.theme].background);
   }, [settings.theme]);
   useEffect(() => {
     if (!chartExpanded) return;
