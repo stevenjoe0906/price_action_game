@@ -13,7 +13,7 @@ This specification incorporates the decisions agreed on October 20, 2026. The im
 
 ## Game and turns
 
-- A game starts with a fixed **10,000 USDT** balance, carrying across **20 turns**.
+- A game starts with a configurable **10–100,000 USDT integer** balance (default 10,000), carrying across **20 turns**.
 - The game ends after turn 20 or immediately on liquidation. No manual End Game action.
 - Initially show no chart; provide Start New Game.
 - Each turn chooses a random historical start at or after **2022-01-01 00:00 UTC**, before the latest available fully closed candle.
@@ -75,7 +75,7 @@ This specification incorporates the decisions agreed on October 20, 2026. The im
 
 ## Settings and persistence
 
-- Fixed starting balance: 10,000 USDT, reset on every new game.
+- Starting balance: integer from 10 to 100,000 USDT (default 10,000). Changes apply to the next new game or restart; the current game retains its captured starting balance.
 - Risk default 1%; intervals: **5m, 15m, 30m, 1h, 4h, 1d**, default 5m.
 - New interval selection applies to the next chart, without replacing an active chart mid-position.
 - Provide a persistent Light/Dark switch affecting the interface, native chart, and drawing colors.

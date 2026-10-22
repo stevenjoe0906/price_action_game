@@ -1,6 +1,13 @@
 import { INTERVALS, type Interval } from "./market";
 import type { Theme } from "./theme";
-import type { Game, Trade, Turn } from "./engine";
+import {
+  INITIAL_BALANCE,
+  validStartingBalance,
+  startingBalanceOf,
+  type Game,
+  type Trade,
+  type Turn,
+} from "./engine";
 export const DISPLAY_SIZES = {
   half: 0.5,
   small: 0.7,
@@ -12,12 +19,14 @@ export const DISPLAY_SIZES = {
 } as const;
 export type DisplaySize = keyof typeof DISPLAY_SIZES;
 export type Settings = {
+  startingBalance: number;
   risk: number;
   interval: Interval;
   displaySize: DisplaySize;
   theme: Theme;
 };
 export type Summary = {
+  startingBalance?: number;
   id: string;
   date: string;
   balance: number;
@@ -29,6 +38,7 @@ export type Summary = {
   trades: Trade[];
 };
 export const defaults: Settings = {
+  startingBalance: INITIAL_BALANCE,
   risk: 1,
   interval: "5m",
   displaySize: "comfortable",
@@ -46,6 +56,9 @@ export function loadSettings(): Settings {
     )
       return defaults;
     return {
+      startingBalance: validStartingBalance(s.startingBalance)
+        ? s.startingBalance
+        : defaults.startingBalance,
       risk: s.risk,
       interval: s.interval,
       theme:
@@ -78,6 +91,10 @@ export function loadSummaries(): Summary[] {
   }
 }
 export function saveSettings(s: Settings) {
+  if (!validStartingBalance(s.startingBalance))
+    throw new Error(
+      "Starting balance must be a whole number from 10 to 100,000 USDT.",
+    );
   localStorage.setItem("pa-settings", JSON.stringify(s));
 }
 export function summarize(g: Game): Summary {
@@ -86,8 +103,9 @@ export function summarize(g: Game): Summary {
       globalThis.crypto?.randomUUID?.() ??
       `${Date.now()}-${Math.random().toString(36).slice(2)}`,
     date: new Date().toISOString(),
+    startingBalance: startingBalanceOf(g),
     balance: g.balance,
-    net: g.balance - 10000,
+    net: g.balance - startingBalanceOf(g),
     fees: g.fees,
     liquidated: g.liquidated,
     turns: g.turns,

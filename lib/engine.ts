@@ -3,6 +3,18 @@ export const FEE = 0.0005;
 export const SLIPPAGE = 0.0001;
 export const MAINTENANCE = 0.005;
 export const INITIAL_BALANCE = 10_000;
+export const MIN_STARTING_BALANCE = 10;
+export const MAX_STARTING_BALANCE = 100_000;
+export const validStartingBalance = (value: unknown): value is number =>
+  typeof value === "number" &&
+  Number.isInteger(value) &&
+  value >= MIN_STARTING_BALANCE &&
+  value <= MAX_STARTING_BALANCE;
+/** Older saved summaries used the fixed default balance. */
+export const startingBalanceOf = (record: { startingBalance?: number }) =>
+  validStartingBalance(record.startingBalance)
+    ? record.startingBalance
+    : INITIAL_BALANCE;
 export type Side = "long" | "short";
 export type OrderType = "market" | "limit" | "stop" | "stop-limit";
 export type Candle = {
@@ -76,6 +88,7 @@ export type Turn = {
   balance: number;
 };
 export type Game = {
+  startingBalance: number;
   balance: number;
   fees: number;
   position: Position | null;
@@ -121,9 +134,18 @@ export const orderNotionalPrice = (
 ) => (order.type === "stop-limit" ? order.limit! : order.entry);
 export const slip = (price: number, side: Side) =>
   price * (1 + direction(side) * SLIPPAGE);
-export function createGame(last: number, time: number): Game {
+export function createGame(
+  last: number,
+  time: number,
+  startingBalance = INITIAL_BALANCE,
+): Game {
+  if (!validStartingBalance(startingBalance))
+    throw new Error(
+      "Starting balance must be a whole number from 10 to 100,000 USDT.",
+    );
   return {
-    balance: INITIAL_BALANCE,
+    startingBalance,
+    balance: startingBalance,
     fees: 0,
     position: null,
     orders: [],
@@ -136,7 +158,7 @@ export function createGame(last: number, time: number): Game {
     last,
     time,
     bars: 0,
-    baseline: INITIAL_BALANCE,
+    baseline: startingBalance,
     feeBaseline: 0,
     tradeBaseline: 0,
     nextId: 1,
