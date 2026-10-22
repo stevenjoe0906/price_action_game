@@ -135,7 +135,7 @@ The page and scroll-panel boundaries suppress overscroll bounce/pull-to-refresh 
 
 ## Game rules
 
-- A new game starts with **10,000 USDT**. Balance carries across **20 turns**. Liquidation ends the game immediately. There is no manual End Game button.
+- A new game starts with the saved **starting balance (10–100,000 USDT, whole numbers only; default 10,000)**. Balance carries across **20 turns**. Liquidation ends the game immediately. There is no manual End Game button.
 - Each turn randomly selects BTCUSDT or ETHUSDT from the installed data pack, with equal probability when both are present, then a historical start at or after January 1, 2022. It shows **500–1,500 initial candles**, repicking when history is insufficient. The initial final close is normalized to **100** using one fixed OHLC multiplier throughout the turn. Calendar dates are hidden during play. When the turn ends, chart axes, crosshair and OHLC values reveal real prices for the selected market and UTC dates using the original normalization factor; the visible candle history stays unchanged. The market symbol and asset icon are hidden before a game starts and during active turns, and revealed only after a turn ends. The separate introductory slogan area is removed.
 - Replay has **no fixed candle limit**. Play at 1×, 2×, 5×, 10×, or 20×; one candle per second at 1×. **Space** toggles playback; **Right Arrow** or **Next** advances immediately when pressed, then repeats at the same selected 1×–20× rate as Play (one candle per second at 1×). Speed changes also update a running hold. Playback pauses in a hidden tab.
 - **Finish turn** cancels every pending order and closes the open position at the **last visible close**, with market slippage and fees. It reveals no further candles. Reaching the latest closed API candle or the end of the installed archive pack automatically finishes the turn. Data gaps and connection errors pause playback instead of fabricating prices.
@@ -206,7 +206,7 @@ Annotations belong to the current chart and reset when you start a new turn or r
 
 ## Persistence
 
-Settings (including display size and appearance) and the most recent **10 completed game summaries** are stored in browser localStorage. Summaries include per-turn results and closed trades. The active game is **not saved**: refreshing or closing the page discards it. A new game always starts at 10,000 USDT. Browser-storage failures are reported without blocking the game.
+Settings (including display size and appearance) and the most recent **10 completed game summaries** are stored in browser localStorage. Summaries include per-turn results and closed trades. The active game is **not saved**: refreshing or closing the page discards it. Starting-balance changes apply only to the next new game or restart, not later turns in the current game. Browser-storage failures are reported without blocking the game.
 
 ## Verification
 
@@ -254,7 +254,7 @@ The order ticket shows estimated gross profit:loss below estimated margin, alway
 
 Each trade retains its entry-plan ratio for Statistics and CSV exports. Additions use a quantity-weighted average of entry plans across that trade; changing or removing position protection does not rewrite the original plan. A combined trade has no defined ratio if an entry lacks a TP. This turn and This game show the arithmetic mean of defined trade ratios, including the open position and excluding pending orders. Older records without this metadata show `—` and are excluded from averages.
 
-Account statistics now appear in **This game**, below **This turn**, rather than in a top status strip. **Restart game** opens a confirmation dialog. Confirming cancels pending orders, closes any open position at the last visible price using normal execution costs, and saves the record in Statistics before resetting to turn 1 and $10,000. Restarted games are labeled in history and exports and share the existing ten-game browser history limit. If data loading or saving fails, the current game remains available. An already completed, saved game is not archived again.
+Account statistics now appear in **This game**, below **This turn**, rather than in a top status strip. **Restart game** opens a confirmation dialog. Confirming cancels pending orders, closes any open position at the last visible price using normal execution costs, and saves the record in Statistics before resetting to turn 1 with the configured starting balance. Restarted games are labeled in history and exports and share the existing ten-game browser history limit. If data loading or saving fails, the current game remains available. An already completed, saved game is not archived again.
 
 ## BTC and ETH replay packs
 
@@ -263,3 +263,5 @@ Account statistics now appear in **This game**, below **This turn**, rather than
 Each turn and repick chooses a market independently; a game can contain both markets but is not forced to alternate. Existing BTC-only packs remain usable and select BTC until ETH is downloaded. Archive caches, API fallback, future replay, and source conversion metadata all follow the selected symbol. Completed-turn and trade review tables identify the market. Old saved games remain BTC. CSV exports add `initial_quantity_asset` for BTC or ETH; the legacy `initial_quantity_btc` column stays blank for ETH trades. The current hidden turn does not expose its symbol in trade exports.
 
 After the game ends, **New game** appears under **This game**, replacing **Restart game**; **This turn** has no game-start action. Revealed time-axis ticks use compact UTC times (`13:30`), day numbers, month names, or years according to zoom and date boundaries. The crosshair still shows the full UTC date and time, and active turns retain relative bar numbering.
+
+Starting balance is configurable in Settings as an integer from 10 to 100,000 USDT. Each new game captures that setting and carries its balance across all 20 turns, even if Settings changes midgame. Repick preserves the current game’s balance. Statistics, drawdown, return percentages, balance plots, PNG cards, and CSV exports use the captured starting balance. Existing saved games and settings without this field retain the original 10,000 USDT default.
