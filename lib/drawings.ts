@@ -1,5 +1,5 @@
 export type DrawingKind =
-  "trend" | "ray" | "horizontal" | "vertical" | "rectangle" | "measure";
+  "trend" | "ray" | "horizontal" | "vertical" | "rectangle" | "measure" | "fib";
 export type DrawingColor = "blue" | "accent" | "green" | "red";
 export type DrawingPoint = { logical: number; price: number };
 export type Drawing = {
@@ -103,4 +103,15 @@ export function rayEnd(
   ].filter((n) => Number.isFinite(n) && n >= 0);
   const factor = candidates.length ? Math.min(...candidates) : 1;
   return { x: a.x + dx * factor, y: a.y + dy * factor };
+}
+
+export const FIBONACCI_LEVELS = [
+  0, 0.236, 0.382, 0.5, 0.618, 0.786, 1,
+] as const;
+/** Retracement runs from the second anchor (0%) back toward the first (100%). */
+export function fibonacciLevels(from: DrawingPoint, to: DrawingPoint) {
+  return FIBONACCI_LEVELS.map((level) => ({
+    level,
+    price: to.price + (from.price - to.price) * level,
+  }));
 }

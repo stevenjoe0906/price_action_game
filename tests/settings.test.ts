@@ -33,6 +33,7 @@ function storage(
 test("old settings retain risk and interval when adding display-size preference", (t) => {
   storage(t, JSON.stringify({ risk: 2.5, interval: "15m" }));
   assert.deepEqual(loadSettings(), {
+    startingBalance: defaults.startingBalance,
     risk: 2.5,
     interval: "15m",
     displaySize: "comfortable",
@@ -45,6 +46,7 @@ test("all display sizes round-trip through saved settings", (t) => {
     DISPLAY_SIZES,
   ) as (keyof typeof DISPLAY_SIZES)[]) {
     const settings = {
+      startingBalance: defaults.startingBalance,
       risk: 1,
       interval: "5m" as const,
       displaySize,
@@ -60,6 +62,7 @@ test("unknown display sizes fall back without resetting valid trading settings",
     JSON.stringify({ risk: 3, interval: "4h", displaySize: "invalid" }),
   );
   assert.deepEqual(loadSettings(), {
+    startingBalance: defaults.startingBalance,
     risk: 3,
     interval: "4h",
     displaySize: "comfortable",
@@ -75,6 +78,7 @@ test("light and dark appearance survive reload without changing risk or sizing",
   storage(t);
   for (const theme of ["light", "dark"] as const) {
     const settings = {
+      startingBalance: defaults.startingBalance,
       risk: 2,
       interval: "1h" as const,
       displaySize: "large" as const,
@@ -88,6 +92,7 @@ test("invalid themes preserve prior display and trading preferences", (t) => {
   storage(
     t,
     JSON.stringify({
+      startingBalance: defaults.startingBalance,
       risk: 4,
       interval: "1d",
       displaySize: "extra-large",
@@ -95,6 +100,7 @@ test("invalid themes preserve prior display and trading preferences", (t) => {
     }),
   );
   assert.deepEqual(loadSettings(), {
+    startingBalance: defaults.startingBalance,
     risk: 4,
     interval: "1d",
     displaySize: "extra-large",
@@ -103,7 +109,10 @@ test("invalid themes preserve prior display and trading preferences", (t) => {
 });
 
 test("display size choices include -50%, -30%, -15%, and +50% without changing existing presets", () => {
-  assert.deepEqual(Object.values(DISPLAY_SIZES), [0.5, 0.7, 0.85, 1, 1.15, 1.3, 1.5]);
+  assert.deepEqual(
+    Object.values(DISPLAY_SIZES),
+    [0.5, 0.7, 0.85, 1, 1.15, 1.3, 1.5],
+  );
   assert.equal(DISPLAY_SIZES.comfortable, 1);
   assert.equal(DISPLAY_SIZES.large, 1.15);
   assert.equal(DISPLAY_SIZES["extra-large"], 1.3);

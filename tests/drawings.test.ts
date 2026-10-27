@@ -77,3 +77,32 @@ test("rays extend to viewport edges in both directions without changing their an
     y: 10,
   });
 });
+
+test("Fibonacci retracement follows both anchor directions and moves/scales with the drawing", async () => {
+  const { fibonacciLevels } = await import("../lib/drawings");
+  const a = { logical: 10, price: 100 },
+    b = { logical: 20, price: 120 };
+  const levels = fibonacciLevels(a, b);
+  assert.deepEqual(
+    levels.map((l) => l.level),
+    [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1],
+  );
+  assert.equal(levels[0].price, 120);
+  assert.equal(levels.at(-1)!.price, 100);
+  assert.ok(Math.abs(levels[1].price - 115.28) < 1e-10);
+  const reversed = fibonacciLevels(b, a);
+  assert.equal(reversed[0].price, 100);
+  assert.equal(reversed.at(-1)!.price, 120);
+  const moved = moveDrawing({ ...drawing, kind: "fib", from: a, to: b }, a, {
+    logical: 15,
+    price: 110,
+  });
+  fibonacciLevels(moved.from, moved.to).forEach((level, i) =>
+    assert.equal(level.price, levels[i].price + 10),
+  );
+  const scaled = fibonacciLevels(
+    { ...a, price: a.price / 2 },
+    { ...b, price: b.price / 2 },
+  );
+  scaled.forEach((level, i) => assert.equal(level.price, levels[i].price / 2));
+});

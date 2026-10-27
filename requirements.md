@@ -13,7 +13,7 @@ This specification incorporates the decisions agreed on October 20, 2026. The im
 
 ## Game and turns
 
-- A game starts with a fixed **10,000 USDT** balance, carrying across **20 turns**.
+- A game starts with a configurable **10–100,000 USDT integer** balance (default 10,000), carrying across **20 turns**.
 - The game ends after turn 20 or immediately on liquidation. No manual End Game action.
 - Initially show no chart; provide Start New Game.
 - Each turn chooses a random historical start at or after **2022-01-01 00:00 UTC**, before the latest available fully closed candle.
@@ -43,7 +43,7 @@ This specification incorporates the decisions agreed on October 20, 2026. The im
 
 ## Drawing toolbar
 
-- Provide a free custom toolbar on the chart: select, trendline, ray, horizontal/vertical lines, rectangle, and a percentage/price-change ruler.
+- Provide a free custom toolbar on the chart: select, trendline, ray, horizontal/vertical lines, rectangle, Fibonacci retracement, and a percentage/price-change ruler.
 - Support drag-to-draw or two-point placement, live previews, selecting/moving drawings, endpoint editing, and colors.
 - Keep drawings anchored to chart coordinates through pan, zoom, resize, and candle replay. Drawings must not influence orders or expose future candles.
 - Support hide/show, delete/clear, undo/redo, cancellation, reset view, and chart expansion. Drawings reset with a new chart/turn.
@@ -75,7 +75,7 @@ This specification incorporates the decisions agreed on October 20, 2026. The im
 
 ## Settings and persistence
 
-- Fixed starting balance: 10,000 USDT, reset on every new game.
+- Starting balance: integer from 10 to 100,000 USDT (default 10,000). Changes apply to the next new game or restart; the current game retains its captured starting balance.
 - Risk default 1%; intervals: **5m, 15m, 30m, 1h, 4h, 1d**, default 5m.
 - New interval selection applies to the next chart, without replacing an active chart mid-position.
 - Provide a persistent Light/Dark switch affecting the interface, native chart, and drawing colors.
@@ -104,6 +104,8 @@ This specification incorporates the decisions agreed on October 20, 2026. The im
 
 - Use a linear price scale and uniform native time-tick distribution; retain axis-aligned adaptive grid lines when zooming.
 - Add an Indicators control with EMA 20 enabled by default and a show/hide checkbox. Calculate from revealed closes only, update incrementally during replay, and rebuild on chart changes. No TradingView.com indicator catalog or Pine integration is required.
+- Add independent MACD (12, 26, 9) and Wilder RSI (14) checkboxes, initially hidden. Use separate resizable panes on the shared time axis; MACD includes signal and histogram, RSI uses 30/50/70 guides and a 0–100 scale. Calculate only from revealed closes.
+- Fibonacci retracement uses two anchors, supports both swing directions, and displays 0/23.6/38.2/50/61.8/78.6/100% levels extending right within the price pane. Reuse drawing move/resize/color/hide/delete/undo/redo/cancellation controls. Reveal actual level prices only after the turn ends.
 
 ## Issue #9 interface refinements
 

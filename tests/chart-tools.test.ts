@@ -269,6 +269,90 @@ test("drawing toolbar places, previews, edits, hides, deletes, undoes, and measu
     })) {
       assert.ok(Math.abs(Number(shortLine.getAttribute(axis)) - value) < 1e-7);
     }
+    const beforeFib = host.querySelectorAll(".drawing-shape").length;
+    click("Fibonacci retracement");
+    pointer(svg, "pointerdown", 100, 80);
+    pointer(svg, "pointermove", 300, 180);
+    pointer(svg, "pointerup", 300, 180);
+    assert.equal(
+      host.querySelectorAll('[data-kind="fib"] [data-level]').length,
+      7,
+    );
+    const fibText = (level: string) =>
+      host.querySelector(`[data-kind="fib"] [data-level="${level}"] text`)!
+        .textContent;
+    assert.equal(fibText("0"), "0% · 82.0000");
+    assert.equal(fibText("1"), "100% · 92.0000");
+    pointer(endpoint("from"), "pointerdown", 100, 80);
+    pointer(svg, "pointermove", 120, 100);
+    pointer(svg, "pointerup", 120, 100);
+    assert.equal(fibText("1"), "100% · 90.0000");
+    assert.equal(
+      fibText("0"),
+      "0% · 82.0000",
+      "Opposite Fibonacci anchor stays fixed",
+    );
+    const fib = host.querySelector('[data-kind="fib"]')!;
+    pointer(fib, "pointerdown", 400, 130);
+    pointer(svg, "pointermove", 420, 140);
+    pointer(svg, "pointerup", 420, 140);
+    assert.equal(fibText("0"), "0% · 81.0000");
+    assert.equal(fibText("1"), "100% · 89.0000");
+    click("Undo drawing");
+    assert.equal(fibText("0"), "0% · 82.0000");
+    click("Redo drawing");
+    assert.equal(fibText("0"), "0% · 81.0000");
+    click("Undo drawing");
+    pointer(fib, "pointerdown", 400, 130);
+    pointer(svg, "pointerup", 400, 130);
+    pointer(endpoint("to"), "pointerdown", 300, 180);
+    pointer(svg, "pointermove", 350, 200);
+    assert.equal(fibText("0"), "0% · 80.0000");
+    pointer(svg, "pointercancel", 350, 200);
+    assert.equal(fibText("0"), "0% · 82.0000");
+    assert.equal(docBody().style.overflow, "");
+    act(() =>
+      root.render(
+        createElement(ChartDrawings, {
+          chart,
+          series,
+          textScale: 1,
+          revealFactor: 0.01,
+          onInteract: () => {
+            pauses++;
+          },
+        }),
+      ),
+    );
+    assert.equal(
+      fibText("0"),
+      "0% · 8200.00",
+      "Completed-turn labels convert without changing drawing geometry",
+    );
+    pointer(fib, "pointerdown", 400, 130);
+    pointer(svg, "pointerup", 400, 130);
+    click("Delete selected drawing");
+    assert.equal(host.querySelectorAll(".drawing-shape").length, beforeFib);
+    click("Undo drawing");
+    assert.equal(host.querySelectorAll('[data-kind="fib"]').length, 1);
+    click("Fibonacci retracement");
+    pointer(svg, "pointerdown", 50, 50);
+    pointer(svg, "pointerup", 50, 50);
+    pointer(svg, "pointermove", 150, 150);
+    pointer(svg, "pointerdown", 150, 150);
+    assert.equal(
+      host.querySelectorAll('[data-kind="fib"]').length,
+      2,
+      "Two-click placement works on Fibonacci drawings",
+    );
+    click("Fibonacci retracement");
+    pointer(svg, "pointerdown", 60, 60);
+    key("Escape");
+    assert.equal(
+      host.querySelectorAll('[data-kind="fib"]').length,
+      2,
+      "Escape discards an unfinished retracement",
+    );
     click("Trendline");
     pointer(svg, "pointerdown", 50, 50);
     assert.equal(docBody().style.overflow, "hidden");

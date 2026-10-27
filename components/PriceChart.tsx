@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   CandlestickSeries,
   LineSeries,
+  HistogramSeries,
   ColorType,
   CrosshairMode,
   LineStyle,
@@ -20,6 +21,7 @@ import { chartPrice, chartTime, chartTimeTick } from "@/lib/chart-display";
 import ChartDrawings from "./ChartDrawings";
 import ChartCrosshair from "./ChartCrosshair";
 import { createChartNavigation } from "@/lib/chart-navigation";
+import { createOscillatorPanes } from "@/lib/chart-oscillators";
 import { calculateEMA, nextEMA } from "@/lib/indicators";
 import ChartOrderMenu from "./ChartOrderMenu";
 import ChartLineControls from "./ChartLineControls";
@@ -68,6 +70,11 @@ export default function PriceChart({
     price: number;
   } | null>(null);
   const [showEMA20, setShowEMA20] = useState(true);
+  const [showMACD, setShowMACD] = useState(false);
+  const [showRSI, setShowRSI] = useState(false);
+  const oscillators = useRef<ReturnType<typeof createOscillatorPanes> | null>(
+    null,
+  );
   const ema = useRef<ISeriesApi<"Line"> | null>(null);
   const emaValue = useRef<number | null>(null);
   const container = useRef<HTMLDivElement>(null);
@@ -217,6 +224,10 @@ export default function PriceChart({
       crosshairMarkerVisible: false,
       priceFormat: { type: "price", precision: 4, minMove: 0.0001 },
     });
+    oscillators.current = createOscillatorPanes(chart, {
+      line: LineSeries,
+      histogram: HistogramSeries,
+    });
     let frame = 0;
     const update = () => {
       cancelAnimationFrame(frame);
@@ -228,6 +239,8 @@ export default function PriceChart({
     chart.timeScale().subscribeVisibleLogicalRangeChange(update);
     const observer = new ResizeObserver(update);
     observer.observe(container.current);
+    const pricePane = chart.panes()[0]?.getHTMLElement();
+    if (pricePane) observer.observe(pricePane);
     const node = container.current;
     const beginPan = (event: PointerEvent) => {
       if (event.button === 0) navigation.current?.beginPan();
@@ -244,6 +257,8 @@ export default function PriceChart({
       node.removeEventListener("pointermove", pan);
       node.removeEventListener("pointerdown", beginPan, true);
       priceLines.current.clear();
+      oscillators.current?.destroy();
+      oscillators.current = null;
       chart.remove();
       api.current = null;
       series.current = null;
@@ -281,10 +296,18 @@ export default function PriceChart({
         from: Math.max(0, candles.length - 110),
         to: candles.length + 7,
       });
+    oscillators.current?.setCandles(candles);
     count.current = candles.length;
     firstTime.current = candles[0].time;
     redraw((n) => n + 1);
   }, [candles]);
+  useEffect(() => {
+    oscillators.current?.setEnabled({ macd: showMACD, rsi: showRSI });
+    redraw((n) => n + 1);
+  }, [showMACD, showRSI]);
+  useEffect(() => {
+    oscillators.current?.setAppearance(theme, revealFactor);
+  }, [theme, revealFactor]);
   useEffect(() => {
     ema.current?.applyOptions({ visible: showEMA20 });
   }, [showEMA20]);
@@ -389,6 +412,13 @@ export default function PriceChart({
     };
   }, []);
   void revision;
+  const paneTop = (index: number) => {
+    const pane = api.current?.panes()[index]?.getHTMLElement();
+    return pane && container.current
+      ? pane.getBoundingClientRect().top -
+          container.current.getBoundingClientRect().top
+      : 0;
+  };
   return (
     <div className="chart-workbench">
       <div
@@ -434,11 +464,44 @@ export default function PriceChart({
             />
             EMA 20
           </label>
+          <label>
+            <input
+              type="checkbox"
+              checked={showMACD}
+              onChange={(event) => setShowMACD(event.target.checked)}
+            />
+            MACD (12, 26, 9)
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              checked={showRSI}
+              onChange={(event) => setShowRSI(event.target.checked)}
+            />
+            RSI (14)
+          </label>
         </details>
+        {(showMACD || showRSI) && (
+          <div className="oscillator-labels" aria-hidden="true">
+            {showMACD && (
+              <span style={{ top: paneTop(1) + 8 }}>MACD (12, 26, 9)</span>
+            )}
+            {showRSI && (
+              <span
+                style={{
+                  top: paneTop(showMACD ? 2 : 1) + 8,
+                }}
+              >
+                RSI (14)
+              </span>
+            )}
+          </div>
+        )}
         <ChartDrawings
           chart={api.current}
           series={series.current}
           textScale={textScale}
+          revealFactor={revealFactor}
           onInteract={onDragStart}
           contextOpen={canTrade && context !== null}
           onNavigationLock={drawingNavigation}
@@ -452,10 +515,19 @@ export default function PriceChart({
           revealFactor={revealFactor}
           theme={theme}
           textScale={textScale}
+          timeAxisTop={
+            (showMACD || showRSI) && api.current && container.current
+              ? container.current.clientHeight -
+                api.current.timeScale().height()
+              : undefined
+          }
           blocked={drawingLocked || dragging !== null || context !== null}
           onInspectionChange={inspectNavigation}
         />
-        <div className="chart-watermark">
+        <div
+          className="chart-watermark"
+          style={{ top: (api.current?.paneSize(0).height ?? 0) * 0.44 }}
+        >
           PRICE ACTION<span>READ THE MARKET. TRUST YOUR PROCESS.</span>
         </div>
         {lines
@@ -468,7 +540,7 @@ export default function PriceChart({
               y === null ||
               y === undefined ||
               y < 0 ||
-              y > (container.current?.clientHeight ?? 0) - 28
+              y > (api.current?.paneSize(0).height ?? 0)
             )
               return null;
             return (

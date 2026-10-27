@@ -1,12 +1,12 @@
 import { averageRatio } from "./trade-ratio";
-import { INITIAL_BALANCE } from "./engine";
+import { startingBalanceOf } from "./engine";
 import type { Summary } from "./storage";
 
 export function summaryMetrics(s: Summary) {
   const wins = s.trades.filter((t) => t.net > 0).length;
   const profits = s.trades.reduce((sum, t) => sum + Math.max(0, t.net), 0);
   const losses = s.trades.reduce((sum, t) => sum + Math.max(0, -t.net), 0);
-  let peak = INITIAL_BALANCE,
+  let peak = startingBalanceOf(s),
     drawdown = 0;
   for (const t of s.turns) {
     peak = Math.max(peak, t.balance);
@@ -19,7 +19,7 @@ export function summaryMetrics(s: Summary) {
     winRate: s.trades.length ? (wins / s.trades.length) * 100 : null,
     profitFactor: losses ? profits / losses : profits ? Infinity : null,
     drawdown,
-    returnPercent: (s.net / INITIAL_BALANCE) * 100,
+    returnPercent: (s.net / startingBalanceOf(s)) * 100,
   };
 }
 
@@ -74,7 +74,7 @@ export function summaryCsv(s: Summary) {
         : s.restarted
           ? "restarted"
           : "completed",
-      INITIAL_BALANCE,
+      startingBalanceOf(s),
       s.balance,
       s.net,
       m.returnPercent,
@@ -166,7 +166,7 @@ const number = (n: number) =>
 export function summaryCardSvg(s: Summary) {
   const m = summaryMetrics(s),
     color = s.net >= 0 ? "#72d7b0" : "#e98080";
-  const values = [INITIAL_BALANCE, ...s.turns.map((t) => t.balance)];
+  const values = [startingBalanceOf(s), ...s.turns.map((t) => t.balance)];
   const low = Math.min(...values),
     span = Math.max(...values) - low || 1;
   const points = values
@@ -200,5 +200,5 @@ export function summaryCardSvg(s: Summary) {
     })
     .join(
       "",
-    )}<text x="48" y="526" font-size="16" fill="#97a5ab">BALANCE BY COMPLETED TURN</text><path d="M48 560H1032M48 610H1032M48 660H1032" stroke="#283438" stroke-dasharray="4 6"/><polyline points="${points}" fill="none" stroke="${color}" stroke-width="4"/><text x="48" y="704" font-size="16" fill="#97a5ab">START · $10,000.00</text><text x="1032" y="704" text-anchor="end" font-size="16" fill="#97a5ab">TURN ${s.turns.length} · $${number(values[values.length - 1])}</text><text x="48" y="750" font-size="15" fill="#97a5ab">Trading simulation · Net results include fees · For practice</text></g></svg>`;
+    )}<text x="48" y="526" font-size="16" fill="#97a5ab">BALANCE BY COMPLETED TURN</text><path d="M48 560H1032M48 610H1032M48 660H1032" stroke="#283438" stroke-dasharray="4 6"/><polyline points="${points}" fill="none" stroke="${color}" stroke-width="4"/><text x="48" y="704" font-size="16" fill="#97a5ab">START · $${number(startingBalanceOf(s))}</text><text x="1032" y="704" text-anchor="end" font-size="16" fill="#97a5ab">TURN ${s.turns.length} · $${number(values[values.length - 1])}</text><text x="48" y="750" font-size="15" fill="#97a5ab">Trading simulation · Net results include fees · For practice</text></g></svg>`;
 }

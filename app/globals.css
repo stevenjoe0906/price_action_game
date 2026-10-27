@@ -3238,3 +3238,18 @@ select {
   min-height: 44px;
   justify-content: center;
 }
+
+.oscillator-labels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  color: var(--text-secondary);
+  font: 0.75rem var(--mono);
+}
+.oscillator-labels span {
+  position: absolute;
+  left: 8px;
+  padding: 2px 4px;
+  background: var(--panel);
+  border-radius: 3px;
+}

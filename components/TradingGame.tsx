@@ -23,6 +23,10 @@ import {
   equity,
   finishTurn,
   INITIAL_BALANCE,
+  MIN_STARTING_BALANCE,
+  MAX_STARTING_BALANCE,
+  validStartingBalance,
+  startingBalanceOf,
   liquidationPrice,
   margin,
   modifyProtection,
@@ -286,6 +290,12 @@ export default function TradingGame() {
   const [error, setError] = useState("");
   const [toast, setToast] = useState("");
   const [draft, setDraft] = useState<Settings>(defaults);
+  const [draftStartingBalance, setDraftStartingBalance] = useState(
+    String(INITIAL_BALANCE),
+  );
+  const draftBalanceValid =
+    draftStartingBalance.trim() !== "" &&
+    validStartingBalance(Number(draftStartingBalance));
   const summarySaved = useRef(false);
   const hold = useRef<ReturnType<typeof createReplayTimer> | null>(null);
   const speedRef = useRef(speed);
@@ -425,7 +435,11 @@ export default function TradingGame() {
             );
           }
         }
-        g = createGame(last.close, last.time);
+        g = createGame(
+          last.close,
+          last.time,
+          settingsRef.current.startingBalance,
+        );
         summarySaved.current = false;
       }
       sessionRef.current = s;
@@ -799,7 +813,10 @@ export default function TradingGame() {
     sl,
     tp,
   ]);
-  const balance = game?.balance ?? INITIAL_BALANCE;
+  const startingBalance = game
+    ? startingBalanceOf(game)
+    : settings.startingBalance;
+  const balance = game?.balance ?? startingBalance;
   const upnl = game ? unrealized(game) : 0;
   const closed = game?.trades ?? [];
   const wins = closed.filter((t) => t.net > 0).length;
@@ -820,6 +837,7 @@ export default function TradingGame() {
   const riskAmount = (balance * settings.risk) / 100;
   const openSettings = () => {
     setDraft(settings);
+    setDraftStartingBalance(String(settings.startingBalance));
     setModal("settings");
   };
   return (
@@ -1107,7 +1125,9 @@ export default function TradingGame() {
                   {!loading && <Icon name="arrow" />}
                 </button>
                 <div className="empty-notes">
-                  <span>$10,000 starting balance</span>
+                  <span>
+                    ${money(settings.startingBalance)} starting balance
+                  </span>
                   <span>20 turns</span>
                   <span>100% simulated</span>
                 </div>
@@ -1627,8 +1647,8 @@ export default function TradingGame() {
             <Detail label="Balance" value={`$${money(balance)}`} />
             <Detail
               label="PnL"
-              value={signed(balance - INITIAL_BALANCE)}
-              className={tone(balance - INITIAL_BALANCE)}
+              value={signed(balance - startingBalance)}
+              className={tone(balance - startingBalance)}
             />
             <Detail label="uPnL" value={signed(upnl)} className={tone(upnl)} />
             <Detail
@@ -1690,7 +1710,7 @@ export default function TradingGame() {
           <p>
             Your open position will close at the last visible price and pending
             orders will be canceled. This game’s trades will be saved in
-            Statistics. A new game starts at $10,000.
+            Statistics. A new game starts at ${money(settings.startingBalance)}.
           </p>
           <div className="restart-actions">
             <button className="secondary-button" onClick={() => setModal(null)}>
@@ -1755,11 +1775,28 @@ export default function TradingGame() {
           close={() => setModal(null)}
         >
           <div className="settings-balance">
-            <span>Starting balance</span>
-            <strong>
-              $10,000 <small>USDT</small>
-            </strong>
-            <p>Resets with every new game. Carries across all 20 turns.</p>
+            <label className="field-label" htmlFor="starting-balance">
+              Starting balance <span>USDT · Next game</span>
+              <input
+                id="starting-balance"
+                type="number"
+                inputMode="numeric"
+                min={MIN_STARTING_BALANCE}
+                max={MAX_STARTING_BALANCE}
+                step="1"
+                value={draftStartingBalance}
+                onInput={(event) =>
+                  setDraftStartingBalance(event.currentTarget.value)
+                }
+                aria-invalid={!draftBalanceValid}
+                aria-describedby="starting-balance-help"
+              />
+            </label>
+            <p id="starting-balance-help">
+              {draftBalanceValid
+                ? "Whole numbers from 10 to 100,000 USDT. Changes apply to your next game, including a restart; your current game keeps its original balance."
+                : "Enter a whole number from 10 to 100,000 USDT."}
+            </p>
           </div>
           <div className="settings-execution">
             <span>Execution model</span>
@@ -1843,6 +1880,7 @@ export default function TradingGame() {
           </label>
           <button
             className="primary-button full"
+            disabled={!draftBalanceValid}
             onClick={() => {
               if (
                 !Number.isFinite(draft.risk) ||
@@ -1852,12 +1890,17 @@ export default function TradingGame() {
                 setToast("Risk must be greater than 0 and no more than 100%.");
                 return;
               }
-              setSettings(draft);
+              if (!draftBalanceValid) return;
+              const updated = {
+                ...draft,
+                startingBalance: Number(draftStartingBalance),
+              };
+              setSettings(updated);
               try {
-                saveSettings(draft);
+                saveSettings(updated);
               } catch {
                 setToast(
-                  "Settings apply now, but browser storage is unavailable.",
+                  "Settings updated for this session, but browser storage is unavailable.",
                 );
               }
               setModal(null);
@@ -2092,11 +2135,12 @@ function SummaryView({
   const wins = s.trades.filter((t) => t.net > 0).length;
   const profits = s.trades.reduce((a, t) => a + Math.max(t.net, 0), 0),
     losses = s.trades.reduce((a, t) => a + Math.max(-t.net, 0), 0);
-  const values = [INITIAL_BALANCE, ...s.turns.map((t) => t.balance)];
+  const initial = startingBalanceOf(s);
+  const values = [initial, ...s.turns.map((t) => t.balance)];
   const low = Math.min(...values),
     high = Math.max(...values);
   const span = high - low || 1;
-  let peak = INITIAL_BALANCE,
+  let peak = initial,
     drawdown = 0;
   for (const value of values) {
     peak = Math.max(peak, value);
@@ -2120,7 +2164,7 @@ function SummaryView({
         </div>
         <div className={tone(s.net)}>
           <strong>{signed(s.net)}</strong>
-          <span>{signed((s.net / INITIAL_BALANCE) * 100)}% return</span>
+          <span>{signed((s.net / initial) * 100)}% return</span>
         </div>
       </div>
       {s.id === "current" && (
@@ -2176,7 +2220,7 @@ function SummaryView({
           />
         </svg>
         <div>
-          <span>START · $10,000</span>
+          <span>START · ${money(initial)}</span>
           <span>
             TURN {s.turns.length} · ${money(values[values.length - 1])}
           </span>
