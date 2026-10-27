@@ -11,6 +11,7 @@ import {
   drawingHistory,
   emptyDrawings,
   measure,
+  fibonacciLevels,
   moveDrawing,
   rayEnd,
   type Drawing,
@@ -19,10 +20,13 @@ import {
   type DrawingPoint,
 } from "@/lib/drawings";
 
+import { chartPrice } from "@/lib/chart-display";
+
 type Props = {
   chart: IChartApi | null;
   series: ISeriesApi<"Candlestick"> | null;
   textScale: number;
+  revealFactor?: number | null;
   onInteract: () => void;
   contextOpen?: boolean;
   onNavigationLock?: (locked: boolean) => void;
@@ -45,6 +49,11 @@ const tools: { id: Tool; name: string; path: string }[] = [
   { id: "horizontal", name: "Horizontal line", path: "M2 12h20M6 10v4" },
   { id: "vertical", name: "Vertical line", path: "M12 2v20M10 6h4" },
   { id: "rectangle", name: "Rectangle", path: "M4 5h16v14H4Z" },
+  {
+    id: "fib",
+    name: "Fibonacci retracement",
+    path: "M3 4h18M3 8h18M3 12h18M3 17h18M3 21h18M5 21 19 4",
+  },
   {
     id: "measure",
     name: "Price range / percentage ruler",
@@ -72,6 +81,7 @@ export default function ChartDrawings({
   chart,
   series,
   textScale,
+  revealFactor = null,
   onInteract,
   contextOpen = false,
   onNavigationLock,
@@ -403,10 +413,73 @@ export default function ChartDrawings({
       <g
         key={drawing.id}
         className={`drawing-shape ${active ? "selected" : ""}`}
+        data-kind={drawing.kind}
         onPointerDown={(event) => beginEdit(event, drawing, "move")}
         style={{ color: stroke }}
       >
-        {box ? (
+        {drawing.kind === "fib" ? (
+          <>
+            <rect
+              x={Math.min(a.x, b.x)}
+              y={Math.min(a.y, b.y)}
+              width={Math.max(1, size.width - Math.min(a.x, b.x))}
+              height={Math.max(1, Math.abs(a.y - b.y))}
+              fill={stroke}
+              fillOpacity=".04"
+              pointerEvents="all"
+            />
+            <line
+              x1={a.x}
+              y1={a.y}
+              x2={b.x}
+              y2={b.y}
+              stroke={stroke}
+              strokeDasharray="4 4"
+              pointerEvents="none"
+            />
+            {fibonacciLevels(drawing.from, drawing.to).map(
+              ({ level, price }) => {
+                const levelY = series?.priceToCoordinate(price);
+                if (levelY == null) return null;
+                const left = Math.min(a.x, b.x),
+                  right = size.width - 2;
+                return (
+                  <g key={level} data-level={level}>
+                    <line
+                      x1={left}
+                      y1={levelY}
+                      x2={right}
+                      y2={levelY}
+                      stroke={stroke}
+                      strokeWidth={active ? 1.5 : 1}
+                      pointerEvents="none"
+                    />
+                    <line
+                      x1={left}
+                      y1={levelY}
+                      x2={right}
+                      y2={levelY}
+                      stroke="transparent"
+                      strokeWidth="14"
+                      pointerEvents="stroke"
+                    />
+                    <text
+                      x={Math.max(4, left + 5)}
+                      y={levelY - 4}
+                      fontSize={12 * textScale}
+                      fontFamily="monospace"
+                      fill={stroke}
+                      pointerEvents="none"
+                    >
+                      {+(level * 100).toFixed(1)}% ·{" "}
+                      {chartPrice(price, revealFactor)}
+                    </text>
+                  </g>
+                );
+              },
+            )}
+          </>
+        ) : box ? (
           <>
             <rect
               x={x}

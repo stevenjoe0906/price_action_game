@@ -14,6 +14,7 @@ type Props = {
   revealFactor?: number | null;
   theme: Theme;
   textScale: number;
+  timeAxisTop?: number;
   blocked?: boolean;
   onInspectionChange?: (active: boolean) => void;
 };
@@ -27,6 +28,7 @@ export default function ChartCrosshair({
   revealFactor = null,
   theme,
   textScale,
+  timeAxisTop,
   blocked = false,
   onInspectionChange,
 }: Props) {
@@ -209,9 +211,9 @@ export default function ChartCrosshair({
       )}
       {!touchPending && (
         <div className="chart-crosshair" aria-hidden="true">
-          <svg width={pane.width} height={pane.height}>
+          <svg width={pane.width} height={timeAxisTop ?? pane.height}>
             <path
-              d={`M0 ${pointer.y}H${pane.width} M${x} 0V${pane.height}`}
+              d={`M0 ${pointer.y}H${pane.width} M${x} 0V${timeAxisTop ?? pane.height}`}
               fill="none"
               stroke={palette.crosshair}
               strokeWidth="1"
@@ -237,7 +239,7 @@ export default function ChartCrosshair({
             className="crosshair-bar"
             style={{
               left: x,
-              top: pane.height,
+              top: timeAxisTop ?? pane.height,
               maxWidth: pane.width,
               background: palette.label,
               color: palette.labelText,
